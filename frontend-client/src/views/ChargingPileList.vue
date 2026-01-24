@@ -91,7 +91,9 @@
 
             <div class="info-item">
               <el-icon><Lightning /></el-icon>
-              <span class="info-text">{{ pile.typeDesc }} ({{ pile.power }}kW)</span>
+              <span class="info-text">
+                {{ pile.type === 'AC' ? 'AC（交流慢充）' : 'DC（直流快充）' }} ({{ pile.power }}kW)
+              </span>
             </div>
 
             <div v-if="pile.distance !== undefined && pile.distance !== null" class="info-item">

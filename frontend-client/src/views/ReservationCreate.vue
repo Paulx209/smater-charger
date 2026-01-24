@@ -365,6 +365,21 @@ const loadData = async () => {
     // 加载车辆列表
     await vehicleStore.fetchMyVehicles()
 
+    // 检查是否有车辆
+    if (vehicleStore.vehicles.length === 0) {
+      await ElMessageBox.confirm(
+        '您还没有绑定车辆，请先添加车辆后再进行预约',
+        '提示',
+        {
+          confirmButtonText: '去添加车辆',
+          cancelButtonText: '返回',
+          type: 'warning'
+        }
+      )
+      router.push('/vehicles/add')
+      return
+    }
+
     // 从路由参数获取充电桩ID（如果有）
     const pileIdParam = route.params.pileId
     if (pileIdParam) {
@@ -379,7 +394,12 @@ const loadData = async () => {
     if (vehicleStore.defaultVehicle) {
       reservationForm.vehicleId = vehicleStore.defaultVehicle.id
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error === 'cancel') {
+      // 用户取消，返回列表
+      router.push('/reservations')
+      return
+    }
     console.error('加载数据失败:', error)
   }
 }

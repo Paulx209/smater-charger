@@ -32,7 +32,7 @@
               <el-icon><Location /></el-icon>
               <span>{{ reservation.chargingPileCode || `#${reservation.chargingPileId}` }}</span>
               <el-tag v-if="reservation.chargingPileTypeDesc" type="info" size="small" style="margin-left: 8px">
-                {{ reservation.chargingPileTypeDesc }}
+                {{ reservation.chargingPileType === 'AC' ? 'AC（交流慢充）' : 'DC（直流快充）' }}
               </el-tag>
             </div>
           </el-descriptions-item>
@@ -88,6 +88,17 @@
         <!-- 操作按钮 -->
         <div class="action-section">
           <el-button
+            v-if="canStartCharging(reservation)"
+            type="success"
+            size="large"
+            @click="handleStartCharging"
+            :loading="startingCharging"
+          >
+            <el-icon><Lightning /></el-icon>
+            开始充电
+          </el-button>
+
+          <el-button
             v-if="canCancel(reservation)"
             type="danger"
             size="large"
@@ -120,6 +131,9 @@ import {
   Lightning
 } from '@element-plus/icons-vue'
 import { useReservationStore } from '@/stores/reservation'
+import { useChargingRecordStore } from '@/stores/chargingRecord'
+import { useVehicleStore } from '@/stores/vehicle'
+import { usePriceConfigStore } from '@/stores/priceConfig'
 import {
   ReservationStatusText,
   ReservationStatusColor,
@@ -132,6 +146,12 @@ import {
 const router = useRouter()
 const route = useRoute()
 const reservationStore = useReservationStore()
+const chargingRecordStore = useChargingRecordStore()
+const vehicleStore = useVehicleStore()
+const priceConfigStore = usePriceConfigStore()
+
+// 开始充电状态
+const startingCharging = ref(false)
 
 // 预约ID
 const reservationId = computed(() => {
@@ -177,6 +197,24 @@ const formatDateTime = (dateTime: string) => {
 // 判断是否可以取消
 const canCancel = (reservation: any) => {
   return canCancelReservation(reservation)
+}
+
+// 判断是否可以开始充电
+const canStartCharging = (reservation: any) => {
+  if (!reservation) return false
+
+  // 只有已确认的预约才能开始充电
+  if (reservation.status !== 'CONFIRMED') return false
+
+  // 检查是否在预约时间范围内（允许提前15分钟）
+  const now = new Date()
+  const startTime = new Date(reservation.startTime)
+  const endTime = new Date(reservation.endTime)
+
+  // 提前15分钟可以开始充电
+  const allowStartTime = new Date(startTime.getTime() - 15 * 60 * 1000)
+
+  return now >= allowStartTime && now <= endTime
 }
 
 // 格式化剩余时间
@@ -228,6 +266,140 @@ const handleCancel = async () => {
       return
     }
     console.error('取消预约失败:', error)
+  }
+}
+
+// 开始充电
+const handleStartCharging = async () => {
+  if (!reservation.value) return
+
+  try {
+    // 检查是否已有正在进行的充电记录
+    const currentRecord = await chargingRecordStore.fetchCurrentChargingRecord()
+    if (currentRecord) {
+      ElMessage.warning('您已有正在进行的充电，请先结束当前充电')
+      return
+    }
+
+    // 获取用户的车辆列表
+    await vehicleStore.fetchMyVehicles()
+    const vehicles = vehicleStore.vehicles
+
+    // 检查是否有车辆
+    if (vehicles.length === 0) {
+      await ElMessageBox.confirm(
+        '您还没有绑定车辆，请先添加车辆后再进行充电',
+        '提示',
+        {
+          confirmButtonText: '去添加车辆',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      router.push('/vehicles/add')
+      return
+    }
+
+    // 让用户选择车辆
+    const { value: selectedVehicleId } = await ElMessageBox.prompt(
+      '请选择要充电的车辆',
+      '选择车辆',
+      {
+        confirmButtonText: '下一步',
+        cancelButtonText: '取消',
+        inputType: 'select',
+        inputOptions: vehicles.map(v => ({
+          label: `${v.licensePlate} (${v.brand} ${v.model})`,
+          value: v.id
+        })),
+        inputValidator: (value) => {
+          if (!value) {
+            return '请选择车辆'
+          }
+          return true
+        }
+      }
+    )
+
+    // 让用户输入预计充电量
+    const { value: electricQuantity } = await ElMessageBox.prompt(
+      '请输入预计充电量（度）',
+      '充电量预估',
+      {
+        confirmButtonText: '查看预估费用',
+        cancelButtonText: '取消',
+        inputType: 'number',
+        inputPlaceholder: '请输入预计充电量',
+        inputValidator: (value) => {
+          const num = Number(value)
+          if (!value || num <= 0) {
+            return '充电量必须大于0'
+          }
+          if (num > 999) {
+            return '充电量不能超过999度'
+          }
+          return true
+        }
+      }
+    )
+
+    // 获取充电桩类型（从预约信息中获取，如果没有则默认为AC）
+    const pileType = reservation.value.chargingPileType || 'AC'
+
+    // 调用费用预估接口
+    const estimate = await priceConfigStore.estimateFee({
+      chargingPileType: pileType,
+      electricQuantity: Number(electricQuantity)
+    })
+
+    // 显示费用预估并确认
+    const confirmMessage = `
+      <div style="text-align: left; padding: 10px;">
+        <h3 style="margin-bottom: 15px;">费用预估</h3>
+        <p><strong>充电桩：</strong>${reservation.value.chargingPileCode || `#${reservation.value.chargingPileId}`}</p>
+        <p><strong>充电桩类型：</strong>${pileType === 'AC' ? 'AC（交流慢充）' : 'DC（直流快充）'}</p>
+        <p><strong>预计充电量：</strong>${estimate.electricQuantity.toFixed(2)} 度</p>
+        <p><strong>每度电价格：</strong>¥${estimate.pricePerKwh.toFixed(2)}/度</p>
+        <p><strong>服务费：</strong>¥${estimate.serviceFee.toFixed(2)}/度</p>
+        <hr style="margin: 10px 0;">
+        <p><strong>电费：</strong>¥${estimate.breakdown.electricityFee.toFixed(2)}</p>
+        <p><strong>服务费：</strong>¥${estimate.breakdown.serviceFee.toFixed(2)}</p>
+        <p style="font-size: 18px; color: #f56c6c; margin-top: 10px;">
+          <strong>预估总费用：¥${estimate.totalPrice.toFixed(2)}</strong>
+        </p>
+        <p style="font-size: 12px; color: #909399; margin-top: 10px;">
+          * 以上为预估费用，实际费用以充电结束后的结算为准
+        </p>
+      </div>
+    `
+
+    await ElMessageBox.confirm(confirmMessage, '确认开始充电', {
+      confirmButtonText: '确认充电',
+      cancelButtonText: '取消',
+      type: 'info',
+      dangerouslyUseHTMLString: true
+    })
+
+    startingCharging.value = true
+
+    // 调用开始充电接口
+    const record = await chargingRecordStore.beginCharging({
+      chargingPileId: reservation.value.chargingPileId,
+      vehicleId: Number(selectedVehicleId)
+    })
+
+    ElMessage.success('开始充电成功')
+
+    // 跳转到充电记录详情页
+    router.push(`/charging-record/${record.id}`)
+  } catch (error: any) {
+    if (error === 'cancel') {
+      // 用户取消操作
+      return
+    }
+    console.error('开始充电失败:', error)
+  } finally {
+    startingCharging.value = false
   }
 }
 
