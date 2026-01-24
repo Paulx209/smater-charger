@@ -51,6 +51,9 @@ public enum ResultCode {
     CHARGING_RECORD_NOT_CHARGING(4403, "充电记录不是充电中状态"),
     NO_VALID_RESERVATION(4404, "您没有该充电桩的有效预约"),
 
+    // 预警通知相关错误 45xx
+    WARNING_NOTICE_NOT_FOUND(4501, "预警通知不存在"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),
