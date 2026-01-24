@@ -18,12 +18,15 @@ public class Vehicle extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    //车牌号
     @Column(name = "license_plate", nullable = false, length = 20)
     private String licensePlate;
 
+    //品牌
     @Column(name = "brand", length = 50)
     private String brand;
 
+    //车型
     @Column(name = "model", length = 50)
     private String model;
 
