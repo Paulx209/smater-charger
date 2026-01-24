@@ -186,6 +186,8 @@ const handleReset = async () => {
 
 // 查看详情
 const handleViewDetail = (id: number) => {
+  console.log('查看详情被点击，充电桩ID:', id)
+  console.log('准备跳转到:', `/charging-piles/${id}`)
   router.push(`/charging-piles/${id}`)
 }
 
