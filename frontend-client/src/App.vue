@@ -24,6 +24,8 @@ const handleLogout = async () => {
         <nav class="nav">
           <RouterLink to="/">首页</RouterLink>
           <RouterLink to="/charging-piles">充电桩查询</RouterLink>
+          <RouterLink to="/reservations">我的预约</RouterLink>
+          <RouterLink to="/vehicles">车辆管理</RouterLink>
           <RouterLink to="/about">关于</RouterLink>
           <RouterLink to="/profile">个人中心</RouterLink>
         </nav>

@@ -46,6 +46,42 @@ const router = createRouter({
       name: 'charging-pile-detail',
       component: () => import('../views/ChargingPileDetail.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/vehicles',
+      name: 'vehicle-list',
+      component: () => import('../views/VehicleList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/vehicles/add',
+      name: 'vehicle-add',
+      component: () => import('../views/VehicleForm.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/vehicles/:id/edit',
+      name: 'vehicle-edit',
+      component: () => import('../views/VehicleForm.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/reservations',
+      name: 'reservation-list',
+      component: () => import('../views/ReservationList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/reservations/create',
+      name: 'reservation-create',
+      component: () => import('../views/ReservationCreate.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/reservations/:id',
+      name: 'reservation-detail',
+      component: () => import('../views/ReservationDetail.vue'),
+      meta: { requiresAuth: true }
     }
   ],
 })
