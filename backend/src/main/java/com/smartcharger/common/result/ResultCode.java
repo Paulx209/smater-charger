@@ -39,6 +39,12 @@ public enum ResultCode {
     USER_HAS_PENDING_RESERVATION(4204, "您已有进行中的预约"),
     RESERVATION_CANNOT_CANCEL(4205, "预约状态不允许取消"),
 
+    // 费用配置相关错误 43xx
+    PRICE_CONFIG_NOT_FOUND(4301, "费用配置不存在"),
+    INVALID_TIME_RANGE(4302, "时间范围无效，开始时间必须早于结束时间"),
+    PRICE_CONFIG_CONFLICT(4303, "存在冲突的费用配置，同一充电桩类型在同一时间段只能有一个激活配置"),
+    NO_ACTIVE_PRICE_CONFIG(4304, "未找到该充电桩类型的有效费用配置"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),
