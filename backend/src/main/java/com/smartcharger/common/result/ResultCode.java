@@ -60,6 +60,11 @@ public enum ResultCode {
     ANNOUNCEMENT_NOT_PUBLISHED(4603, "公告不是已发布状态，无法下线"),
     ANNOUNCEMENT_NOT_AVAILABLE(4604, "公告不可用或已过期"),
 
+    // 故障报修相关错误 47xx
+    FAULT_REPORT_NOT_FOUND(4701, "故障报修记录不存在"),
+    FAULT_REPORT_NOT_OWNER(4702, "无权操作该故障报修记录"),
+    FAULT_REPORT_CANNOT_CANCEL(4703, "只能取消待处理状态的报修记录"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),
