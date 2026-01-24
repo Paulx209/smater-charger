@@ -144,7 +144,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useReservationStore } from '@/stores/reservation'
@@ -154,6 +154,7 @@ import { validateReservationTime, calculateReservationDuration } from '@/types/r
 import { ChargingPileStatus, ChargingPileStatusTagType } from '@/types/chargingPile'
 
 const router = useRouter()
+const route = useRoute()
 const reservationStore = useReservationStore()
 const vehicleStore = useVehicleStore()
 const chargingPileStore = useChargingPileStore()
@@ -342,10 +343,8 @@ const handleSubmit = async () => {
 
     // 创建预约
     await reservationStore.addReservation({
-      pileId: reservationForm.pileId,
-      vehicleId: reservationForm.vehicleId,
-      startTime,
-      endTime
+      chargingPileId: reservationForm.pileId,
+      startTime
     })
 
     // 返回列表页
@@ -365,6 +364,16 @@ const loadData = async () => {
 
     // 加载车辆列表
     await vehicleStore.fetchMyVehicles()
+
+    // 从路由参数获取充电桩ID（如果有）
+    const pileIdParam = route.params.pileId
+    if (pileIdParam) {
+      const pileId = Number(pileIdParam)
+      if (!isNaN(pileId)) {
+        reservationForm.pileId = pileId
+        console.log('从路由参数预填充充电桩ID:', pileId)
+      }
+    }
 
     // 如果有默认车辆，自动选中
     if (vehicleStore.defaultVehicle) {
