@@ -22,11 +22,10 @@
               style="width: 150px"
               @change="handleFilter"
             >
-              <el-option label="待确认" :value="0" />
-              <el-option label="已确认" :value="1" />
-              <el-option label="已取消" :value="2" />
-              <el-option label="已完成" :value="3" />
-              <el-option label="已过期" :value="4" />
+              <el-option label="待使用" value="PENDING" />
+              <el-option label="已完成" value="COMPLETED" />
+              <el-option label="已取消" value="CANCELLED" />
+              <el-option label="已过期" value="EXPIRED" />
             </el-select>
           </el-form-item>
 
@@ -67,7 +66,10 @@
           <div class="reservation-header">
             <div class="reservation-title">
               <el-icon><Location /></el-icon>
-              <span class="pile-name">{{ reservation.pileName || `充电桩 #${reservation.pileId}` }}</span>
+              <span class="pile-name">{{ reservation.chargingPileCode || `充电桩 #${reservation.chargingPileId}` }}</span>
+              <el-tag v-if="reservation.chargingPileTypeDesc" type="info" size="small" style="margin-left: 8px">
+                {{ reservation.chargingPileTypeDesc }}
+              </el-tag>
             </div>
             <el-tag
               :type="getStatusColor(reservation.status)"
@@ -90,22 +92,24 @@
               <span class="info-text">{{ calculateDuration(reservation.startTime, reservation.endTime) }} 小时</span>
             </div>
 
-            <div v-if="reservation.pileLocation" class="info-item">
+            <div v-if="reservation.chargingPileLocation" class="info-item">
               <el-icon><MapLocation /></el-icon>
               <span class="info-label">充电桩位置：</span>
-              <span class="info-text">{{ reservation.pileLocation }}</span>
+              <span class="info-text">{{ reservation.chargingPileLocation }}</span>
             </div>
 
-            <div v-if="reservation.vehicleLicensePlate" class="info-item">
-              <el-icon><Van /></el-icon>
-              <span class="info-label">车辆：</span>
-              <span class="info-text">{{ reservation.vehicleLicensePlate }}</span>
+            <div v-if="reservation.chargingPilePower" class="info-item">
+              <el-icon><Lightning /></el-icon>
+              <span class="info-label">充电功率：</span>
+              <span class="info-text">{{ reservation.chargingPilePower }} kW</span>
             </div>
 
-            <div v-if="reservation.cancelReason" class="info-item">
-              <el-icon><Warning /></el-icon>
-              <span class="info-label">取消原因：</span>
-              <span class="info-text cancel-reason">{{ reservation.cancelReason }}</span>
+            <div v-if="reservation.remainingMinutes !== undefined && reservation.remainingMinutes !== null" class="info-item">
+              <el-icon><Timer /></el-icon>
+              <span class="info-label">剩余时间：</span>
+              <span class="info-text" :class="{ 'text-warning': reservation.remainingMinutes < 30 }">
+                {{ formatRemainingTime(reservation.remainingMinutes) }}
+              </span>
             </div>
           </div>
 
@@ -155,8 +159,7 @@ import {
   Clock,
   Timer,
   MapLocation,
-  Van,
-  Warning
+  Lightning
 } from '@element-plus/icons-vue'
 import { useReservationStore } from '@/stores/reservation'
 import {
@@ -203,6 +206,15 @@ const calculateDuration = (startTime: string, endTime: string) => {
 // 判断是否可以取消
 const canCancel = (reservation: ReservationInfo) => {
   return canCancelReservation(reservation)
+}
+
+// 格式化剩余时间
+const formatRemainingTime = (minutes: number) => {
+  if (minutes < 0) return '已过期'
+  if (minutes < 60) return `${minutes} 分钟`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`
 }
 
 // 创建预约
@@ -378,6 +390,11 @@ onMounted(async () => {
 .info-text {
   flex: 1;
   word-break: break-word;
+}
+
+.text-warning {
+  color: #e6a23c;
+  font-weight: 600;
 }
 
 .cancel-reason {

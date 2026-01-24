@@ -27,17 +27,35 @@
             {{ reservation.id }}
           </el-descriptions-item>
 
-          <el-descriptions-item label="充电桩">
+          <el-descriptions-item label="充电桩编号">
             <div class="pile-info">
               <el-icon><Location /></el-icon>
-              <span>{{ reservation.pileName || `充电桩 #${reservation.pileId}` }}</span>
+              <span>{{ reservation.chargingPileCode || `#${reservation.chargingPileId}` }}</span>
+              <el-tag v-if="reservation.chargingPileTypeDesc" type="info" size="small" style="margin-left: 8px">
+                {{ reservation.chargingPileTypeDesc }}
+              </el-tag>
             </div>
           </el-descriptions-item>
 
-          <el-descriptions-item v-if="reservation.pileLocation" label="充电桩位置">
+          <el-descriptions-item v-if="reservation.chargingPileLocation" label="充电桩位置">
             <div class="location-info">
               <el-icon><MapLocation /></el-icon>
-              <span>{{ reservation.pileLocation }}</span>
+              <span>{{ reservation.chargingPileLocation }}</span>
+              <el-button
+                type="text"
+                size="small"
+                @click="handleViewPile"
+                style="margin-left: 8px"
+              >
+                查看充电桩详情
+              </el-button>
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item v-if="reservation.chargingPilePower" label="充电功率">
+            <div class="power-info">
+              <el-icon><Lightning /></el-icon>
+              <span>{{ reservation.chargingPilePower }} kW</span>
             </div>
           </el-descriptions-item>
 
@@ -55,26 +73,15 @@
             </div>
           </el-descriptions-item>
 
-          <el-descriptions-item v-if="reservation.vehicleLicensePlate" label="车辆">
-            <div class="vehicle-info">
-              <el-icon><Van /></el-icon>
-              <span class="license-plate">{{ reservation.vehicleLicensePlate }}</span>
+          <el-descriptions-item v-if="reservation.remainingMinutes !== undefined && reservation.remainingMinutes !== null" label="剩余时间">
+            <div class="remaining-info" :class="{ 'text-warning': reservation.remainingMinutes < 30 }">
+              <el-icon><Timer /></el-icon>
+              <span>{{ formatRemainingTime(reservation.remainingMinutes) }}</span>
             </div>
           </el-descriptions-item>
 
           <el-descriptions-item label="创建时间">
             {{ formatDateTime(reservation.createdTime) }}
-          </el-descriptions-item>
-
-          <el-descriptions-item label="更新时间">
-            {{ formatDateTime(reservation.updatedTime) }}
-          </el-descriptions-item>
-
-          <el-descriptions-item v-if="reservation.cancelReason" label="取消原因">
-            <div class="cancel-reason">
-              <el-icon><Warning /></el-icon>
-              <span>{{ reservation.cancelReason }}</span>
-            </div>
           </el-descriptions-item>
         </el-descriptions>
 
@@ -110,8 +117,7 @@ import {
   MapLocation,
   Clock,
   Timer,
-  Van,
-  Warning
+  Lightning
 } from '@element-plus/icons-vue'
 import { useReservationStore } from '@/stores/reservation'
 import {
@@ -171,6 +177,22 @@ const formatDateTime = (dateTime: string) => {
 // 判断是否可以取消
 const canCancel = (reservation: any) => {
   return canCancelReservation(reservation)
+}
+
+// 格式化剩余时间
+const formatRemainingTime = (minutes: number) => {
+  if (minutes < 0) return '已过期'
+  if (minutes < 60) return `${minutes} 分钟`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`
+}
+
+// 查看充电桩详情
+const handleViewPile = () => {
+  if (reservation.value?.chargingPileId) {
+    router.push(`/charging-piles/${reservation.value.chargingPileId}`)
+  }
 }
 
 // 返回
@@ -274,11 +296,17 @@ onMounted(() => {
 .location-info,
 .time-info,
 .duration-info,
-.vehicle-info,
+.power-info,
+.remaining-info,
 .cancel-reason {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.text-warning {
+  color: #e6a23c;
+  font-weight: 600;
 }
 
 .license-plate {
