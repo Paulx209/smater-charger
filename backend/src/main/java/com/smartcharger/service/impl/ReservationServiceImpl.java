@@ -3,6 +3,7 @@ package com.smartcharger.service.impl;
 import com.smartcharger.common.exception.BusinessException;
 import com.smartcharger.common.result.ResultCode;
 import com.smartcharger.dto.request.ReservationCreateRequest;
+import com.smartcharger.dto.response.AvailabilityCheckResponse;
 import com.smartcharger.dto.response.ReservationResponse;
 import com.smartcharger.entity.ChargingPile;
 import com.smartcharger.entity.Reservation;
@@ -22,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 预约服务实现类
@@ -295,6 +298,86 @@ public class ReservationServiceImpl implements ReservationService {
             case "AC" -> "交流慢充";
             case "DC" -> "直流快充";
             default -> type;
+        };
+    }
+
+    @Override
+    public AvailabilityCheckResponse checkAvailability(Long pileId, LocalDateTime startTime, LocalDateTime endTime) {
+        log.info("检查充电桩可用性: pileId={}, startTime={}, endTime=", pileId, startTime, endTime);
+
+        // 1. 检查充电桩是否存在
+        ChargingPile chargingPile = chargingPileRepository.findById(pileId)
+                .orElse(null);
+
+        if (chargingPile == null) {
+            return AvailabilityCheckResponse.builder()
+                    .available(false)
+                    .reason("充电桩不存在")
+                    .build();
+        }
+
+        // 2. 检查充电桩状态
+        if (chargingPile.getStatus() != ChargingPileStatus.IDLE) {
+            return AvailabilityCheckResponse.builder()
+                    .available(false)
+                    .reason("充电桩当前状态为：" + getChargingPileStatusDesc(chargingPile.getStatus()))
+                    .build();
+        }
+
+        // 3. 检查时间段是否有冲突的预约
+        List<Reservation> conflictReservations = reservationRepository
+                .findByChargingPileIdAndStatusAndEndTimeAfter(pileId, ReservationStatus.PENDING, startTime);
+
+        // 过滤出真正冲突的预约（时间段有重叠）
+        List<Reservation> actualConflicts = conflictReservations.stream()
+                .filter(r -> isTimeOverlap(startTime, endTime, r.getStartTime(), r.getEndTime()))
+                .toList();
+
+        if (!actualConflicts.isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            List<AvailabilityCheckResponse.ConflictReservation> conflicts = actualConflicts.stream()
+                    .map(r -> AvailabilityCheckResponse.ConflictReservation.builder()
+                            .reservationId(r.getId())
+                            .startTime(r.getStartTime().format(formatter))
+                            .endTime(r.getEndTime().format(formatter))
+                            .build())
+                    .collect(Collectors.toList());
+
+            return AvailabilityCheckResponse.builder()
+                    .available(false)
+                    .reason("该时间段已有预约")
+                    .conflictReservations(conflicts)
+                    .build();
+        }
+
+        // 4. 可用
+        return AvailabilityCheckResponse.builder()
+                .available(true)
+                .reason("充电桩可用")
+                .build();
+    }
+
+    /**
+     * 判断两个时间段是否重叠
+     */
+    private boolean isTimeOverlap(LocalDateTime start1, LocalDateTime end1,
+                                   LocalDateTime start2, LocalDateTime end2) {
+        // 时间段1: [start1, end1]
+        // 时间段2: [start2, end2]
+        // 重叠条件: start1 < end2 && start2 < end1
+        return start1.isBefore(end2) && start2.isBefore(end1);
+    }
+
+    /**
+     * 获取充电桩状态描述
+     */
+    private String getChargingPileStatusDesc(ChargingPileStatus status) {
+        return switch (status) {
+            case IDLE -> "空闲";
+            case CHARGING -> "充电中";
+            case FAULT -> "故障";
+            case RESERVED -> "已预约";
+            case OVERTIME -> "超时占位";
         };
     }
 }

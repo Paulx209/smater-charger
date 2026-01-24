@@ -1,5 +1,6 @@
 package com.smartcharger.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -20,5 +21,6 @@ public class ReservationCreateRequest {
     /**
      * 预约开始时间（可选，默认当前时间）
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime startTime;
 }

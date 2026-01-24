@@ -1,5 +1,6 @@
 package com.smartcharger.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.smartcharger.entity.enums.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,11 +72,13 @@ public class ReservationResponse {
     /**
      * 预约开始时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime startTime;
 
     /**
      * 预约结束时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime endTime;
 
     /**
@@ -96,5 +99,6 @@ public class ReservationResponse {
     /**
      * 创建时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createdTime;
 }

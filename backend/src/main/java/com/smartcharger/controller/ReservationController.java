@@ -2,15 +2,19 @@ package com.smartcharger.controller;
 
 import com.smartcharger.common.result.Result;
 import com.smartcharger.dto.request.ReservationCreateRequest;
+import com.smartcharger.dto.response.AvailabilityCheckResponse;
 import com.smartcharger.dto.response.ReservationResponse;
 import com.smartcharger.entity.enums.ReservationStatus;
 import com.smartcharger.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 预约管理控制器
@@ -60,22 +64,34 @@ public class ReservationController {
     }
 
     /**
-     * 获取预约详情
-     */
-    @GetMapping("/{id}")
-    public Result<ReservationResponse> getReservationById(@PathVariable Long id) {
-        Long userId = getCurrentUserId();
-        ReservationResponse response = reservationService.getReservationById(userId, id);
-        return Result.success(response);
-    }
-
-    /**
      * 获取当前进行中的预约
      */
     @GetMapping("/current")
     public Result<ReservationResponse> getCurrentReservation() {
         Long userId = getCurrentUserId();
         ReservationResponse response = reservationService.getCurrentReservation(userId);
+        return Result.success(response);
+    }
+
+    /**
+     * 检查充电桩可用性
+     */
+    @GetMapping("/check-availability")
+    public Result<AvailabilityCheckResponse> checkAvailability(
+            @RequestParam Long pileId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
+        AvailabilityCheckResponse response = reservationService.checkAvailability(pileId, startTime, endTime);
+        return Result.success(response);
+    }
+
+    /**
+     * 获取预约详情
+     */
+    @GetMapping("/{id:\\d+}")
+    public Result<ReservationResponse> getReservationById(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        ReservationResponse response = reservationService.getReservationById(userId, id);
         return Result.success(response);
     }
 
