@@ -69,6 +69,19 @@
           </div>
         </div>
 
+        <!-- 费用信息 -->
+        <div class="section">
+          <div class="section-title">
+            <el-icon><Money /></el-icon>
+            <span>费用信息</span>
+          </div>
+
+          <div class="price-components">
+            <PriceInfo :charging-pile-type="chargingPileStore.currentPile.type" />
+            <PriceEstimate :charging-pile-type="chargingPileStore.currentPile.type" />
+          </div>
+        </div>
+
         <!-- 操作按钮 -->
         <div class="section">
           <div class="action-buttons">
@@ -114,6 +127,7 @@ import {
   InfoFilled,
   Location,
   MapLocation,
+  Money,
   Calendar,
   Position
 } from '@element-plus/icons-vue'
@@ -122,6 +136,8 @@ import {
   ChargingPileStatus,
   ChargingPileStatusTagType
 } from '@/types/chargingPile'
+import PriceInfo from '@/components/PriceInfo.vue'
+import PriceEstimate from '@/components/PriceEstimate.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -270,6 +286,12 @@ onMounted(async () => {
 
 .status-tip {
   margin-top: 16px;
+}
+
+.price-components {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
 }
 
 .empty-state {
