@@ -1,23 +1,68 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isAuthenticated } from '@/utils/auth'
 import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/Login.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/Register.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/about',
       name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
+      meta: { requiresAuth: true }
     },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/Profile.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/charging-piles',
+      name: 'charging-piles',
+      component: () => import('../views/ChargingPileList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/charging-piles/:id',
+      name: 'charging-pile-detail',
+      component: () => import('../views/ChargingPileDetail.vue'),
+      meta: { requiresAuth: true }
+    }
   ],
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const hasToken = isAuthenticated()
+
+  if (to.meta.requiresAuth && !hasToken) {
+    // 需要登录但未登录，跳转到登录页
+    next('/login')
+  } else if ((to.path === '/login' || to.path === '/register') && hasToken) {
+    // 已登录访问登录页或注册页，跳转到首页
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router
