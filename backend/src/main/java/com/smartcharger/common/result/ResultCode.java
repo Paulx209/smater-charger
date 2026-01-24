@@ -54,6 +54,12 @@ public enum ResultCode {
     // 预警通知相关错误 45xx
     WARNING_NOTICE_NOT_FOUND(4501, "预警通知不存在"),
 
+    // 系统公告相关错误 46xx
+    ANNOUNCEMENT_NOT_FOUND(4601, "公告不存在"),
+    ANNOUNCEMENT_NOT_DRAFT(4602, "公告不是草稿状态，无法发布"),
+    ANNOUNCEMENT_NOT_PUBLISHED(4603, "公告不是已发布状态，无法下线"),
+    ANNOUNCEMENT_NOT_AVAILABLE(4604, "公告不可用或已过期"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),
