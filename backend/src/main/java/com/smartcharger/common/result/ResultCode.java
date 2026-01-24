@@ -45,6 +45,12 @@ public enum ResultCode {
     PRICE_CONFIG_CONFLICT(4303, "存在冲突的费用配置，同一充电桩类型在同一时间段只能有一个激活配置"),
     NO_ACTIVE_PRICE_CONFIG(4304, "未找到该充电桩类型的有效费用配置"),
 
+    // 充电记录相关错误 44xx
+    CHARGING_RECORD_NOT_FOUND(4401, "充电记录不存在"),
+    USER_ALREADY_CHARGING(4402, "您已有正在进行的充电记录"),
+    CHARGING_RECORD_NOT_CHARGING(4403, "充电记录不是充电中状态"),
+    NO_VALID_RESERVATION(4404, "您没有该充电桩的有效预约"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),
