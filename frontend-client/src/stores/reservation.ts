@@ -15,6 +15,7 @@ import type {
   ReservationQueryParams,
   ReservationStatus
 } from '@/types/reservation'
+import { ReservationStatus as Status } from '@/types/reservation'
 
 export const useReservationStore = defineStore('reservation', () => {
   // 状态
@@ -25,14 +26,18 @@ export const useReservationStore = defineStore('reservation', () => {
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  // 获取进行中的预约（待确认和已确认）
+  // 获取进行中的预约（待使用）
   const activeReservations = computed(() =>
-    reservations.value.filter(r => r.status === 0 || r.status === 1)
+    reservations.value.filter(r => r.status === Status.PENDING)
   )
 
   // 获取历史预约（已取消、已完成、已过期）
   const historyReservations = computed(() =>
-    reservations.value.filter(r => r.status === 2 || r.status === 3 || r.status === 4)
+    reservations.value.filter(r =>
+      r.status === Status.CANCELLED ||
+      r.status === Status.COMPLETED ||
+      r.status === Status.EXPIRED
+    )
   )
 
   /**

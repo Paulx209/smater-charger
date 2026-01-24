@@ -1,27 +1,24 @@
 // 预约状态枚举
 export enum ReservationStatus {
-  PENDING = 0,      // 待确认
-  CONFIRMED = 1,    // 已确认
-  CANCELLED = 2,    // 已取消
-  COMPLETED = 3,    // 已完成
-  EXPIRED = 4       // 已过期
+  PENDING = 'PENDING',      // 待使用
+  COMPLETED = 'COMPLETED',  // 已完成
+  CANCELLED = 'CANCELLED',  // 已取消
+  EXPIRED = 'EXPIRED'       // 已过期
 }
 
 // 预约状态文本映射
 export const ReservationStatusText: Record<ReservationStatus, string> = {
-  [ReservationStatus.PENDING]: '待确认',
-  [ReservationStatus.CONFIRMED]: '已确认',
-  [ReservationStatus.CANCELLED]: '已取消',
+  [ReservationStatus.PENDING]: '待使用',
   [ReservationStatus.COMPLETED]: '已完成',
+  [ReservationStatus.CANCELLED]: '已取消',
   [ReservationStatus.EXPIRED]: '已过期'
 }
 
 // 预约状态颜色映射
 export const ReservationStatusColor: Record<ReservationStatus, string> = {
   [ReservationStatus.PENDING]: 'warning',
-  [ReservationStatus.CONFIRMED]: 'success',
+  [ReservationStatus.COMPLETED]: 'success',
   [ReservationStatus.CANCELLED]: 'info',
-  [ReservationStatus.COMPLETED]: 'primary',
   [ReservationStatus.EXPIRED]: 'danger'
 }
 
@@ -29,26 +26,26 @@ export const ReservationStatusColor: Record<ReservationStatus, string> = {
 export interface ReservationInfo {
   id: number
   userId: number
-  pileId: number
-  vehicleId: number
+  chargingPileId: number
+  chargingPileCode?: string
+  chargingPileLocation?: string
+  chargingPileLng?: number
+  chargingPileLat?: number
+  chargingPileType?: string
+  chargingPileTypeDesc?: string
+  chargingPilePower?: number
   startTime: string
   endTime: string
   status: ReservationStatus
-  cancelReason?: string
+  statusDesc?: string
+  remainingMinutes?: number
   createdTime: string
-  updatedTime: string
-  // 关联信息
-  pileName?: string
-  pileLocation?: string
-  vehicleLicensePlate?: string
 }
 
 // 创建预约请求
 export interface ReservationCreateRequest {
-  pileId: number
-  vehicleId: number
-  startTime: string
-  endTime: string
+  chargingPileId: number
+  startTime?: string
 }
 
 // 取消预约请求
@@ -137,9 +134,8 @@ export function calculateReservationDuration(startTime: string, endTime: string)
 
 // 判断预约是否可以取消
 export function canCancelReservation(reservation: ReservationInfo): boolean {
-  // 只有待确认和已确认的预约可以取消
-  if (reservation.status !== ReservationStatus.PENDING &&
-      reservation.status !== ReservationStatus.CONFIRMED) {
+  // 只有待使用的预约可以取消
+  if (reservation.status !== ReservationStatus.PENDING) {
     return false
   }
 
