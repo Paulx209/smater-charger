@@ -94,13 +94,22 @@
               <span class="info-text">{{ pile.typeDesc }} ({{ pile.power }}kW)</span>
             </div>
 
-            <div v-if="pile.distance !== undefined" class="info-item">
+            <div v-if="pile.distance !== undefined && pile.distance !== null" class="info-item">
               <el-icon><Position /></el-icon>
               <span class="info-text">距离 {{ pile.distance.toFixed(2) }}km</span>
             </div>
           </div>
 
           <div class="pile-actions">
+            <el-button
+              type="success"
+              size="small"
+              :disabled="pile.status !== ChargingPileStatus.IDLE"
+              @click.stop="handleReserve(pile.id)"
+            >
+              <el-icon><Calendar /></el-icon>
+              预约
+            </el-button>
             <el-button type="primary" size="small" @click.stop="handleViewDetail(pile.id)">
               查看详情
             </el-button>
@@ -126,7 +135,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Refresh, Location, Lightning, Position } from '@element-plus/icons-vue'
+import { Search, Refresh, Location, Lightning, Position, Calendar } from '@element-plus/icons-vue'
 import { useChargingPileStore } from '@/stores/chargingPile'
 import {
   ChargingPileType,
@@ -178,6 +187,11 @@ const handleReset = async () => {
 // 查看详情
 const handleViewDetail = (id: number) => {
   router.push(`/charging-piles/${id}`)
+}
+
+// 预约充电桩
+const handleReserve = (id: number) => {
+  router.push(`/reservations/create/${id}`)
 }
 
 // 分页大小改变

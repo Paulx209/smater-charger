@@ -159,18 +159,8 @@ const getStatusTip = (status: ChargingPileStatus) => {
 
 // 预约充电
 const handleReserve = async () => {
-  try {
-    await ElMessageBox.confirm('确定要预约该充电桩吗？', '预约确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'info'
-    })
-
-    // TODO: 调用预约接口
-    ElMessage.success('预约功能待实现')
-  } catch (error) {
-    // 用户取消
-  }
+  const pileId = Number(route.params.id)
+  router.push(`/reservations/create/${pileId}`)
 }
 
 // 导航到充电桩
