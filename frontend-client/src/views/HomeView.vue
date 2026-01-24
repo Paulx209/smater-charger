@@ -15,6 +15,9 @@
       </div>
     </el-card>
 
+    <!-- 当前充电状态 -->
+    <CurrentChargingStatus />
+
     <!-- 快速功能入口 -->
     <div class="quick-actions">
       <el-card class="action-card" shadow="hover" @click="navigateTo('/charging-piles')">
@@ -27,33 +30,75 @@
         </div>
       </el-card>
 
-      <el-card class="action-card" shadow="hover" @click="navigateTo('/charging-piles')">
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/charging-record')">
         <div class="action-content">
           <el-icon :size="48" color="#67c23a">
+            <Tickets />
+          </el-icon>
+          <h3>充电记录</h3>
+          <p>查看历史充电记录和费用明细</p>
+        </div>
+      </el-card>
+
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/charging-record/statistics')">
+        <div class="action-content">
+          <el-icon :size="48" color="#e6a23c">
+            <DataAnalysis />
+          </el-icon>
+          <h3>充电统计</h3>
+          <p>查看充电统计数据和费用分析</p>
+        </div>
+      </el-card>
+
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/reservations')">
+        <div class="action-content">
+          <el-icon :size="48" color="#f56c6c">
             <Calendar />
           </el-icon>
-          <h3>预约充电</h3>
-          <p>提前预约充电桩，避免排队等待</p>
+          <h3>我的预约</h3>
+          <p>管理充电桩预约，避免排队等待</p>
+        </div>
+      </el-card>
+
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/vehicles')">
+        <div class="action-content">
+          <el-icon :size="48" color="#909399">
+            <Van />
+          </el-icon>
+          <h3>车辆管理</h3>
+          <p>管理我的车辆信息</p>
+        </div>
+      </el-card>
+
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/warning-notice')">
+        <div class="action-content">
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notice-badge">
+            <el-icon :size="48" color="#f56c6c">
+              <Bell />
+            </el-icon>
+          </el-badge>
+          <h3>预警通知</h3>
+          <p>查看占位预警和系统通知</p>
+        </div>
+      </el-card>
+
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/warning-notice/settings')">
+        <div class="action-content">
+          <el-icon :size="48" color="#409eff">
+            <Setting />
+          </el-icon>
+          <h3>预警设置</h3>
+          <p>设置超时占位预警阈值</p>
         </div>
       </el-card>
 
       <el-card class="action-card" shadow="hover" @click="navigateTo('/profile')">
         <div class="action-content">
-          <el-icon :size="48" color="#e6a23c">
+          <el-icon :size="48" color="#67c23a">
             <User />
           </el-icon>
           <h3>个人中心</h3>
-          <p>管理个人信息，查看充电记录</p>
-        </div>
-      </el-card>
-
-      <el-card class="action-card" shadow="hover">
-        <div class="action-content">
-          <el-icon :size="48" color="#f56c6c">
-            <Bell />
-          </el-icon>
-          <h3>占位预警</h3>
-          <p>及时接收充电完成提醒</p>
+          <p>管理个人信息和账户设置</p>
         </div>
       </el-card>
     </div>
@@ -93,10 +138,10 @@
 
         <div class="feature-item">
           <el-icon :size="32" color="#f56c6c">
-            <DataAnalysis />
+            <Money />
           </el-icon>
-          <h4>数据统计</h4>
-          <p>充电记录详细统计，费用清晰透明</p>
+          <h4>费用透明</h4>
+          <p>充电费用清晰透明，支持费用预估</p>
         </div>
       </div>
     </el-card>
@@ -104,20 +149,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Lightning,
   Search,
   Calendar,
   User,
-  Bell,
   Location,
   View,
   Clock,
-  DataAnalysis
+  Money,
+  DataAnalysis,
+  Tickets,
+  Van,
+  Bell,
+  Setting
 } from '@element-plus/icons-vue'
+import { useWarningNoticeStore } from '@/stores/warningNotice'
+import CurrentChargingStatus from '@/components/CurrentChargingStatus.vue'
 
 const router = useRouter()
+const warningNoticeStore = useWarningNoticeStore()
+
+const unreadCount = computed(() => warningNoticeStore.unreadCount)
 
 const navigateTo = (path: string) => {
   router.push(path)
@@ -205,6 +260,10 @@ const navigateTo = (path: string) => {
   margin: 0;
   font-size: 14px;
   color: #909399;
+}
+
+.notice-badge {
+  display: inline-block;
 }
 
 .features-card {

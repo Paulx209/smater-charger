@@ -100,6 +100,36 @@ const router = createRouter({
       name: 'admin-price-config-edit',
       component: () => import('../views/admin/PriceConfigForm.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/charging-record',
+      name: 'charging-record-list',
+      component: () => import('../views/ChargingRecordList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/charging-record/:id',
+      name: 'charging-record-detail',
+      component: () => import('../views/ChargingRecordDetail.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/charging-record/statistics',
+      name: 'charging-record-statistics',
+      component: () => import('../views/ChargingRecordStatistics.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/warning-notice',
+      name: 'warning-notice-list',
+      component: () => import('../views/WarningNoticeList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/warning-notice/settings',
+      name: 'warning-notice-settings',
+      component: () => import('../views/WarningNoticeSettings.vue'),
+      meta: { requiresAuth: true }
     }
   ],
 })
