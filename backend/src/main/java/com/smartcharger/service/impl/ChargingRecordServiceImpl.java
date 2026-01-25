@@ -60,28 +60,37 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         ChargingPile chargingPile = chargingPileRepository.findById(request.getChargingPileId())
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
-        // 3. 验证充电桩状态
+        // 3. 验证充电桩状态（不能是充电中或故障）
         if (chargingPile.getStatus() == ChargingPileStatus.CHARGING) {
             throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
         }
+        if (chargingPile.getStatus() == ChargingPileStatus.FAULT) {
+            throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
+        }
 
-        // 4. 如果充电桩状态为"已预约"，验证当前用户是否有有效预约
-        if (chargingPile.getStatus() == ChargingPileStatus.RESERVED) {
-            LocalDateTime now = LocalDateTime.now();
-            List<Reservation> validReservations = reservationRepository
-                    .findByChargingPileIdAndStatusAndEndTimeAfter(
-                            request.getChargingPileId(),
-                            ReservationStatus.PENDING,
-                            now
-                    );
+        // 4. 检查充电桩是否有有效预约（无论充电桩状态如何，都要检查）
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> validReservations = reservationRepository
+                .findByChargingPileIdAndStatusAndEndTimeAfter(
+                        request.getChargingPileId(),
+                        ReservationStatus.PENDING,
+                        now
+                );
 
-            boolean hasValidReservation = validReservations.stream()
-                    .anyMatch(r -> r.getUserId().equals(userId) &&
-                            r.getStartTime().isBefore(now.plusMinutes(30)));
+        // 查找当前用户的有效预约（预约开始时间前30分钟内可用）
+        Reservation userReservation = validReservations.stream()
+                .filter(r -> r.getUserId().equals(userId) &&
+                        r.getStartTime().isBefore(now.plusMinutes(30)))
+                .findFirst()
+                .orElse(null);
 
-            if (!hasValidReservation) {
-                throw new BusinessException(ResultCode.NO_VALID_RESERVATION);
-            }
+        // 查找其他用户的有效预约
+        boolean hasOtherUserReservation = validReservations.stream()
+                .anyMatch(r -> !r.getUserId().equals(userId));
+
+        // 如果有其他用户的预约，拒绝充电
+        if (hasOtherUserReservation) {
+            throw new BusinessException(ResultCode.NO_VALID_RESERVATION);
         }
 
         // 5. 如果提供了车辆ID，验证车辆是否存在且属于当前用户
@@ -100,7 +109,14 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
         chargingRecord = chargingRecordRepository.save(chargingRecord);
 
-        // 7. 更新充电桩状态为"充电中"
+        // 7. 如果使用了预约，更新预约状态为已完成
+        if (userReservation != null) {
+            userReservation.setStatus(ReservationStatus.COMPLETED);
+            reservationRepository.save(userReservation);
+            log.info("使用预约开始充电: userId={}, reservationId={}", userId, userReservation.getId());
+        }
+
+        // 8. 更新充电桩状态为"充电中"
         chargingPile.setStatus(ChargingPileStatus.CHARGING);
         chargingPileRepository.save(chargingPile);
 
