@@ -51,4 +51,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      */
     List<Reservation> findByStatusAndEndTimeBefore(
             ReservationStatus status, LocalDateTime time);
+
+    /**
+     * 统计充电桩的预约记录数量
+     */
+    Long countByChargingPileId(Long chargingPileId);
 }

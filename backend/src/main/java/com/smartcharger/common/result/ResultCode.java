@@ -65,6 +65,15 @@ public enum ResultCode {
     FAULT_REPORT_NOT_OWNER(4702, "无权操作该故障报修记录"),
     FAULT_REPORT_CANNOT_CANCEL(4703, "只能取消待处理状态的报修记录"),
 
+    // 充电桩管理相关错误 48xx
+    CHARGING_PILE_CODE_EXISTS(4801, "充电桩编号已存在"),
+    CHARGING_PILE_CANNOT_DELETE(4802, "充电桩状态不允许删除，只能删除空闲或故障状态的充电桩"),
+    CHARGING_PILE_HAS_RECORDS(4803, "该充电桩有关联的充电记录，无法删除"),
+    CHARGING_PILE_HAS_RESERVATIONS(4804, "该充电桩有关联的预约记录，无法删除"),
+    CHARGING_PILE_STATUS_INVALID(4805, "充电桩状态转换不合法，只能手动设置为空闲或故障"),
+    CHARGING_PILE_IS_CHARGING(4806, "充电桩正在充电中，无法手动更改状态"),
+    CHARGING_PILE_IS_RESERVED(4807, "充电桩已被预约，需要先取消预约"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),

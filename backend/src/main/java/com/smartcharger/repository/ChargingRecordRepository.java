@@ -102,4 +102,33 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
                                              @Param("startDate") LocalDateTime startDate,
                                              @Param("endDate") LocalDateTime endDate,
                                              Pageable pageable);
+
+    /**
+     * 统计充电桩的充电记录数量
+     */
+    Long countByChargingPileId(Long chargingPileId);
+
+    /**
+     * 统计充电桩的总充电量
+     */
+    @Query("SELECT SUM(cr.electricQuantity) FROM ChargingRecord cr WHERE cr.chargingPileId = :chargingPileId AND cr.status = 'COMPLETED'")
+    java.math.BigDecimal sumElectricQuantityByChargingPileId(@Param("chargingPileId") Long chargingPileId);
+
+    /**
+     * 统计充电桩的总营收
+     */
+    @Query("SELECT SUM(cr.fee) FROM ChargingRecord cr WHERE cr.chargingPileId = :chargingPileId AND cr.status = 'COMPLETED'")
+    java.math.BigDecimal sumFeeByChargingPileId(@Param("chargingPileId") Long chargingPileId);
+
+    /**
+     * 计算充电桩的平均充电时长（分钟）
+     */
+    @Query("SELECT AVG(TIMESTAMPDIFF(MINUTE, cr.startTime, cr.endTime)) FROM ChargingRecord cr WHERE cr.chargingPileId = :chargingPileId AND cr.status = 'COMPLETED'")
+    Double avgDurationByChargingPileId(@Param("chargingPileId") Long chargingPileId);
+
+    /**
+     * 查询充电桩的最后充电时间
+     */
+    @Query("SELECT MAX(cr.startTime) FROM ChargingRecord cr WHERE cr.chargingPileId = :chargingPileId")
+    LocalDateTime findLastChargingTimeByChargingPileId(@Param("chargingPileId") Long chargingPileId);
 }

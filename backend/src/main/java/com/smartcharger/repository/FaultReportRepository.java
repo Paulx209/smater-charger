@@ -79,4 +79,9 @@ public interface FaultReportRepository extends JpaRepository<FaultReport, Long> 
     List<Object[]> findTopFaultPiles(@Param("startDate") LocalDateTime startDate,
                                        @Param("endDate") LocalDateTime endDate,
                                        Pageable pageable);
+
+    /**
+     * 统计充电桩的故障次数
+     */
+    Long countByChargingPileId(Long chargingPileId);
 }

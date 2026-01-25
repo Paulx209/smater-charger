@@ -53,4 +53,22 @@ public interface ChargingPileRepository extends JpaRepository<ChargingPile, Long
      * 根据状态查询充电桩
      */
     List<ChargingPile> findByStatus(ChargingPileStatus status);
+
+    /**
+     * 根据编号查询充电桩（排除指定ID）
+     */
+    @Query("SELECT cp FROM ChargingPile cp WHERE cp.code = :code AND cp.id != :excludeId")
+    ChargingPile findByCodeAndIdNot(@Param("code") String code, @Param("excludeId") Long excludeId);
+
+    /**
+     * 管理端查询：根据多个条件查询
+     */
+    @Query("SELECT cp FROM ChargingPile cp WHERE " +
+            "(:type IS NULL OR cp.type = :type) AND " +
+            "(:status IS NULL OR cp.status = :status) AND " +
+            "(:keyword IS NULL OR cp.code LIKE %:keyword% OR cp.location LIKE %:keyword%)")
+    Page<ChargingPile> findByAdminConditions(@Param("type") ChargingPileType type,
+                                               @Param("status") ChargingPileStatus status,
+                                               @Param("keyword") String keyword,
+                                               Pageable pageable);
 }

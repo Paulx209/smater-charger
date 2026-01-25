@@ -159,13 +159,19 @@ public class ChargingPileServiceImpl implements ChargingPileService {
      * 将实体转换为响应DTO
      */
     private ChargingPileResponse convertToResponse(ChargingPile chargingPile) {
-        ChargingPileResponse response = new ChargingPileResponse();
-        BeanUtils.copyProperties(chargingPile, response);
-
-        // 设置类型和状态的中文描述
-        response.setTypeDesc(chargingPile.getType().getDescription());
-        response.setStatusDesc(chargingPile.getStatus().getDescription());
-
-        return response;
+        return ChargingPileResponse.builder()
+                .id(chargingPile.getId())
+                .code(chargingPile.getCode())
+                .location(chargingPile.getLocation())
+                .lng(chargingPile.getLng())
+                .lat(chargingPile.getLat())
+                .type(chargingPile.getType())
+                .typeDesc(chargingPile.getType().getDescription())
+                .power(chargingPile.getPower())
+                .status(chargingPile.getStatus())
+                .statusDesc(chargingPile.getStatus().getDescription())
+                .createdTime(chargingPile.getCreatedTime())
+                .updatedTime(chargingPile.getUpdatedTime())
+                .build();
     }
 }
