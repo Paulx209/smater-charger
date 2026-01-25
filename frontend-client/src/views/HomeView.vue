@@ -1,19 +1,7 @@
 <template>
   <div class="home-container">
-    <!-- 欢迎横幅 -->
-    <el-card class="welcome-card">
-      <div class="welcome-content">
-        <div class="welcome-text">
-          <h1>欢迎使用智能充电桩管理系统</h1>
-          <p>为您提供便捷的充电桩查询、预约和管理服务</p>
-        </div>
-        <div class="welcome-icon">
-          <el-icon :size="80" color="#409eff">
-            <Lightning />
-          </el-icon>
-        </div>
-      </div>
-    </el-card>
+    <!-- 公告轮播 -->
+    <AnnouncementCarousel />
 
     <!-- 当前充电状态 -->
     <CurrentChargingStatus />
@@ -179,6 +167,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useWarningNoticeStore } from '@/stores/warningNotice'
 import CurrentChargingStatus from '@/components/CurrentChargingStatus.vue'
+import AnnouncementCarousel from '@/components/AnnouncementCarousel.vue'
 
 const router = useRouter()
 const warningNoticeStore = useWarningNoticeStore()
@@ -195,44 +184,6 @@ const navigateTo = (path: string) => {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
-}
-
-.welcome-card {
-  margin-bottom: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.welcome-card :deep(.el-card__body) {
-  padding: 40px;
-}
-
-.welcome-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.welcome-text h1 {
-  margin: 0 0 16px 0;
-  font-size: 32px;
-  font-weight: 600;
-}
-
-.welcome-text p {
-  margin: 0;
-  font-size: 18px;
-  opacity: 0.9;
-}
-
-.welcome-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
 }
 
 .quick-actions {
@@ -316,23 +267,6 @@ const navigateTo = (path: string) => {
 }
 
 @media (max-width: 768px) {
-  .welcome-content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .welcome-icon {
-    margin-top: 20px;
-  }
-
-  .welcome-text h1 {
-    font-size: 24px;
-  }
-
-  .welcome-text p {
-    font-size: 16px;
-  }
-
   .quick-actions {
     grid-template-columns: 1fr;
   }
