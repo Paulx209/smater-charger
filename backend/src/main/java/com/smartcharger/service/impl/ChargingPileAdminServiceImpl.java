@@ -9,6 +9,7 @@ import com.smartcharger.dto.request.ChargingPileUpdateRequest;
 import com.smartcharger.dto.response.BatchDeleteResultResponse;
 import com.smartcharger.dto.response.ChargingPileResponse;
 import com.smartcharger.dto.response.ChargingPileStatisticsResponse;
+import com.smartcharger.dto.response.ImportResultResponse;
 import com.smartcharger.entity.ChargingPile;
 import com.smartcharger.entity.enums.ChargingPileStatus;
 import com.smartcharger.entity.enums.ChargingPileType;
@@ -19,15 +20,18 @@ import com.smartcharger.repository.ReservationRepository;
 import com.smartcharger.service.ChargingPileAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -323,5 +327,271 @@ public class ChargingPileAdminServiceImpl implements ChargingPileAdminService {
         response.setTotalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public ImportResultResponse importChargingPiles(MultipartFile file) throws IOException {
+        // 验证文件格式
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.endsWith(".xlsx") && !filename.endsWith(".xls"))) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "文件格式不正确，仅支持.xlsx或.xls格式");
+        }
+
+        // 解析Excel文件
+        Workbook workbook = WorkbookFactory.create(file.getInputStream());
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int totalCount = 0;
+        int successCount = 0;
+        List<ImportResultResponse.FailedRecord> failedRecords = new ArrayList<>();
+
+        // 从第2行开始读取（第1行是表头）
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) {
+                continue;
+            }
+
+            totalCount++;
+
+            try {
+                // 读取单元格数据
+                String code = getCellValue(row.getCell(0));
+                String location = getCellValue(row.getCell(1));
+                String lngStr = getCellValue(row.getCell(2));
+                String latStr = getCellValue(row.getCell(3));
+                String typeStr = getCellValue(row.getCell(4));
+                String powerStr = getCellValue(row.getCell(5));
+
+                // 验证必填字段
+                if (code == null || code.trim().isEmpty()) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("充电桩编号不能为空")
+                            .build());
+                    continue;
+                }
+
+                if (location == null || location.trim().isEmpty()) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("位置描述不能为空")
+                            .build());
+                    continue;
+                }
+
+                if (typeStr == null || typeStr.trim().isEmpty()) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("充电桩类型不能为空")
+                            .build());
+                    continue;
+                }
+
+                if (powerStr == null || powerStr.trim().isEmpty()) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("功率不能为空")
+                            .build());
+                    continue;
+                }
+
+                // 验证充电桩编号是否已存在
+                ChargingPile existingPile = chargingPileRepository.findByCode(code);
+                if (existingPile != null) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("充电桩编号已存在")
+                            .build());
+                    continue;
+                }
+
+                // 解析类型
+                ChargingPileType type;
+                try {
+                    type = ChargingPileType.valueOf(typeStr.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("充电桩类型无效，必须是AC或DC")
+                            .build());
+                    continue;
+                }
+
+                // 解析功率
+                BigDecimal power;
+                try {
+                    power = new BigDecimal(powerStr);
+                    if (power.compareTo(BigDecimal.ZERO) <= 0) {
+                        failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                                .row(i + 1)
+                                .code(code)
+                                .reason("功率必须大于0")
+                                .build());
+                        continue;
+                    }
+                } catch (NumberFormatException e) {
+                    failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                            .row(i + 1)
+                            .code(code)
+                            .reason("功率格式不正确")
+                            .build());
+                    continue;
+                }
+
+                // 解析经纬度（可选）
+                BigDecimal lng = null;
+                BigDecimal lat = null;
+                if (lngStr != null && !lngStr.trim().isEmpty()) {
+                    try {
+                        lng = new BigDecimal(lngStr);
+                    } catch (NumberFormatException e) {
+                        failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                                .row(i + 1)
+                                .code(code)
+                                .reason("经度格式不正确")
+                                .build());
+                        continue;
+                    }
+                }
+                if (latStr != null && !latStr.trim().isEmpty()) {
+                    try {
+                        lat = new BigDecimal(latStr);
+                    } catch (NumberFormatException e) {
+                        failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                                .row(i + 1)
+                                .code(code)
+                                .reason("纬度格式不正确")
+                                .build());
+                        continue;
+                    }
+                }
+
+                // 创建充电桩
+                ChargingPile chargingPile = new ChargingPile();
+                chargingPile.setCode(code);
+                chargingPile.setLocation(location);
+                chargingPile.setLng(lng);
+                chargingPile.setLat(lat);
+                chargingPile.setType(type);
+                chargingPile.setPower(power);
+                chargingPile.setStatus(ChargingPileStatus.IDLE);
+
+                chargingPileRepository.save(chargingPile);
+                successCount++;
+
+            } catch (Exception e) {
+                String code = getCellValue(row.getCell(0));
+                failedRecords.add(ImportResultResponse.FailedRecord.builder()
+                        .row(i + 1)
+                        .code(code)
+                        .reason("导入失败：" + e.getMessage())
+                        .build());
+            }
+        }
+
+        workbook.close();
+
+        log.info("批量导入充电桩完成: totalCount={}, successCount={}, failCount={}",
+                totalCount, successCount, failedRecords.size());
+
+        return ImportResultResponse.builder()
+                .totalCount(totalCount)
+                .successCount(successCount)
+                .failCount(failedRecords.size())
+                .failedRecords(failedRecords)
+                .build();
+    }
+
+    @Override
+    public Workbook exportChargingPiles(ChargingPileType type, ChargingPileStatus status) {
+        // 查询充电桩列表
+        List<ChargingPile> chargingPiles;
+        if (type != null || status != null) {
+            Pageable pageable = PageRequest.of(0, 10000); // 最多导出10000条
+            Page<ChargingPile> page = chargingPileRepository.findByAdminConditions(type, status, null, pageable);
+            chargingPiles = page.getContent();
+        } else {
+            chargingPiles = chargingPileRepository.findAll();
+        }
+
+        // 创建Excel工作簿
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("充电桩列表");
+
+        // 创建表头样式
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"充电桩编号", "位置描述", "经度", "纬度", "类型", "功率(kW)", "状态", "创建时间"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // 填充数据
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        int rowNum = 1;
+        for (ChargingPile pile : chargingPiles) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(pile.getCode());
+            row.createCell(1).setCellValue(pile.getLocation());
+            row.createCell(2).setCellValue(pile.getLng() != null ? pile.getLng().toString() : "");
+            row.createCell(3).setCellValue(pile.getLat() != null ? pile.getLat().toString() : "");
+            row.createCell(4).setCellValue(pile.getType().name());
+            row.createCell(5).setCellValue(pile.getPower().toString());
+            row.createCell(6).setCellValue(pile.getStatus().getDescription());
+            row.createCell(7).setCellValue(pile.getCreatedTime().format(formatter));
+        }
+
+        // 自动调整列宽
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        log.info("导出充电桩数据: count={}", chargingPiles.size());
+
+        return workbook;
+    }
+
+    /**
+     * 获取单元格值
+     */
+    private String getCellValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toString();
+                } else {
+                    // 避免科学计数法
+                    return BigDecimal.valueOf(cell.getNumericCellValue()).toPlainString();
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return null;
+        }
     }
 }

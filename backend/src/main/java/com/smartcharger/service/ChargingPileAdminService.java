@@ -7,9 +7,15 @@ import com.smartcharger.dto.request.ChargingPileUpdateRequest;
 import com.smartcharger.dto.response.BatchDeleteResultResponse;
 import com.smartcharger.dto.response.ChargingPileResponse;
 import com.smartcharger.dto.response.ChargingPileStatisticsResponse;
+import com.smartcharger.dto.response.ImportResultResponse;
 import com.smartcharger.entity.enums.ChargingPileStatus;
 import com.smartcharger.entity.enums.ChargingPileType;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * 充电桩管理服务接口（管理端）
@@ -56,4 +62,14 @@ public interface ChargingPileAdminService {
      * 获取充电桩统计数据
      */
     ChargingPileStatisticsResponse getChargingPileStatistics(Long id);
+
+    /**
+     * 批量导入充电桩（Excel）
+     */
+    ImportResultResponse importChargingPiles(MultipartFile file) throws IOException;
+
+    /**
+     * 批量导出充电桩（Excel）
+     */
+    Workbook exportChargingPiles(ChargingPileType type, ChargingPileStatus status);
 }

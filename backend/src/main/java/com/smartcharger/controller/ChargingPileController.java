@@ -4,16 +4,22 @@ import com.smartcharger.common.result.Result;
 import com.smartcharger.dto.request.*;
 import com.smartcharger.dto.response.BatchDeleteResultResponse;
 import com.smartcharger.dto.response.ChargingPileResponse;
+import com.smartcharger.dto.response.ImportResultResponse;
 import com.smartcharger.entity.enums.ChargingPileStatus;
 import com.smartcharger.entity.enums.ChargingPileType;
 import com.smartcharger.service.ChargingPileAdminService;
 import com.smartcharger.service.ChargingPileService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,5 +150,34 @@ public class ChargingPileController {
     public Result<BatchDeleteResultResponse> batchDeleteChargingPiles(@Valid @RequestBody ChargingPileBatchDeleteRequest request) {
         BatchDeleteResultResponse response = chargingPileAdminService.batchDeleteChargingPiles(request);
         return Result.success(response);
+    }
+
+    /**
+     * 批量导入充电桩（管理端）
+     */
+    @PostMapping("/admin/import")
+    public Result<ImportResultResponse> importChargingPiles(@RequestParam("file") MultipartFile file) throws IOException {
+        ImportResultResponse response = chargingPileAdminService.importChargingPiles(file);
+        return Result.success(response);
+    }
+
+    /**
+     * 批量导出充电桩（管理端）
+     */
+    @GetMapping("/admin/export")
+    public void exportChargingPiles(
+            @RequestParam(required = false) ChargingPileType type,
+            @RequestParam(required = false) ChargingPileStatus status,
+            HttpServletResponse response) throws IOException {
+        Workbook workbook = chargingPileAdminService.exportChargingPiles(type, status);
+
+        // 设置响应头
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=charging_piles_" + LocalDate.now() + ".xlsx");
+
+        // 写入响应流
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 }
