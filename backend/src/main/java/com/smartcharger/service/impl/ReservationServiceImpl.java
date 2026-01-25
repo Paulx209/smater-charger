@@ -71,17 +71,21 @@ public class ReservationServiceImpl implements ReservationService {
         try {
             // 尝试获取锁，最多等待5秒，锁定10秒
             if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
-                // 4. 检查充电桩状态是否为空闲
+                // 4. 在锁内重新查询充电桩状态，确保使用最新数据
+                chargingPile = chargingPileRepository.findById(request.getChargingPileId())
+                        .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
+
+                // 5. 检查充电桩状态是否为空闲
                 if (chargingPile.getStatus() != ChargingPileStatus.IDLE) {
                     throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
                 }
 
-                // 5. 计算预约时间
+                // 6. 计算预约时间
                 LocalDateTime startTime = request.getStartTime() != null ?
                         request.getStartTime() : LocalDateTime.now();
                 LocalDateTime endTime = startTime.plusHours(2);
 
-                // 6. 检查时间段是否冲突
+                // 7. 检查时间段是否冲突
                 List<Reservation> conflictReservations =
                         reservationRepository.findByChargingPileIdAndStatusAndEndTimeAfter(
                                 request.getChargingPileId(), ReservationStatus.PENDING, startTime);
@@ -90,7 +94,7 @@ public class ReservationServiceImpl implements ReservationService {
                     throw new BusinessException(ResultCode.TIME_CONFLICT);
                 }
 
-                // 7. 创建预约
+                // 8. 创建预约
                 Reservation reservation = new Reservation();
                 reservation.setUserId(userId);
                 reservation.setChargingPileId(request.getChargingPileId());
@@ -99,14 +103,14 @@ public class ReservationServiceImpl implements ReservationService {
                 reservation.setStatus(ReservationStatus.PENDING);
                 Reservation savedReservation = reservationRepository.save(reservation);
 
-                // 8. 更新充电桩状态为已预约
+                // 9. 更新充电桩状态为已预约
                 chargingPile.setStatus(ChargingPileStatus.RESERVED);
                 chargingPileRepository.save(chargingPile);
 
                 log.info("创建预约成功: reservationId={}, chargingPileId={}",
                         savedReservation.getId(), request.getChargingPileId());
 
-                // 9. 返回预约信息
+                // 10. 返回预约信息
                 return buildReservationResponse(savedReservation, chargingPile);
             } else {
                 throw new BusinessException(ResultCode.SYSTEM_BUSY);
