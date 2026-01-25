@@ -112,6 +112,11 @@
               <el-icon><Position /></el-icon>
               导航到此
             </el-button>
+
+            <el-button type="danger" size="large" @click="handleReportFault">
+              <el-icon><Warning /></el-icon>
+              故障报修
+            </el-button>
           </div>
 
           <div v-if="chargingPileStore.currentPile.status !== ChargingPileStatus.IDLE" class="status-tip">
@@ -124,6 +129,74 @@
         </div>
       </div>
 
+      <!-- 故障报修对话框 -->
+      <el-dialog
+        v-model="faultReportDialogVisible"
+        title="故障报修"
+        width="600px"
+        :close-on-click-modal="false"
+      >
+        <el-form
+          ref="faultReportFormRef"
+          :model="faultReportForm"
+          :rules="faultReportRules"
+          label-width="100px"
+        >
+          <el-form-item label="故障类型" prop="faultType">
+            <el-select
+              v-model="faultReportForm.faultType"
+              placeholder="请选择故障类型"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="(text, type) in FaultTypeText"
+                :key="type"
+                :label="text"
+                :value="type"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="故障描述" prop="description">
+            <el-input
+              v-model="faultReportForm.description"
+              type="textarea"
+              :rows="4"
+              placeholder="请详细描述遇到的故障情况"
+              maxlength="500"
+              show-word-limit
+            />
+          </el-form-item>
+
+          <el-form-item label="故障图片">
+            <el-upload
+              v-model:file-list="faultReportForm.imageList"
+              :action="uploadAction"
+              :headers="uploadHeaders"
+              list-type="picture-card"
+              :limit="3"
+              :on-success="handleUploadSuccess"
+              :on-remove="handleRemoveImage"
+              :before-upload="beforeUpload"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-upload>
+            <div class="upload-tip">最多上传3张图片，每张不超过2MB</div>
+          </el-form-item>
+        </el-form>
+
+        <template #footer>
+          <el-button @click="faultReportDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmitFaultReport"
+            :loading="submittingFaultReport"
+          >
+            提交报修
+          </el-button>
+        </template>
+      </el-dialog>
+
       <div v-else class="empty-state">
         <el-empty description="充电桩信息不存在" />
       </div>
@@ -132,9 +205,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadUserFile } from 'element-plus'
 import {
   ArrowLeft,
   InfoFilled,
@@ -143,16 +216,21 @@ import {
   Money,
   Calendar,
   Position,
-  Lightning
+  Lightning,
+  Warning,
+  Plus
 } from '@element-plus/icons-vue'
 import { useChargingPileStore } from '@/stores/chargingPile'
 import { useChargingRecordStore } from '@/stores/chargingRecord'
 import { useVehicleStore } from '@/stores/vehicle'
 import { usePriceConfigStore } from '@/stores/priceConfig'
+import { useFaultReportStore } from '@/stores/faultReport'
 import {
   ChargingPileStatus,
   ChargingPileStatusTagType
 } from '@/types/chargingPile'
+import { FaultType, FaultTypeText } from '@/types/faultReport'
+import { getToken } from '@/utils/auth'
 import PriceInfo from '@/components/PriceInfo.vue'
 import PriceEstimate from '@/components/PriceEstimate.vue'
 
@@ -161,9 +239,45 @@ const route = useRoute()
 const chargingPileStore = useChargingPileStore()
 const chargingRecordStore = useChargingRecordStore()
 const vehicleStore = useVehicleStore()
+const faultReportStore = useFaultReportStore()
 
 // 开始充电状态
 const startingCharging = ref(false)
+
+// 故障报修对话框
+const faultReportDialogVisible = ref(false)
+const faultReportFormRef = ref<FormInstance>()
+const submittingFaultReport = ref(false)
+
+// 故障报修表单
+const faultReportForm = reactive<{
+  faultType: FaultType | ''
+  description: string
+  images: string[]
+  imageList: UploadUserFile[]
+}>({
+  faultType: '',
+  description: '',
+  images: [],
+  imageList: []
+})
+
+// 故障报修表单验证规则
+const faultReportRules: FormRules = {
+  faultType: [
+    { required: true, message: '请选择故障类型', trigger: 'change' }
+  ],
+  description: [
+    { required: true, message: '请输入故障描述', trigger: 'blur' },
+    { min: 10, max: 500, message: '故障描述长度在10-500个字符之间', trigger: 'blur' }
+  ]
+}
+
+// 上传配置
+const uploadAction = import.meta.env.VITE_API_BASE_URL + '/api/fault-reports/upload'
+const uploadHeaders = {
+  Authorization: `Bearer ${getToken()}`
+}
 
 // 返回列表
 const handleBack = () => {
@@ -344,6 +458,78 @@ const handleNavigate = () => {
   window.open(url, '_blank')
 }
 
+// 打开故障报修对话框
+const handleReportFault = () => {
+  // 重置表单
+  faultReportForm.faultType = ''
+  faultReportForm.description = ''
+  faultReportForm.images = []
+  faultReportForm.imageList = []
+  faultReportFormRef.value?.clearValidate()
+
+  faultReportDialogVisible.value = true
+}
+
+// 上传成功回调
+const handleUploadSuccess = (response: any, file: UploadUserFile) => {
+  if (response.url) {
+    faultReportForm.images.push(response.url)
+  }
+}
+
+// 移除图片
+const handleRemoveImage = (file: UploadUserFile) => {
+  const index = faultReportForm.imageList.findIndex(f => f.uid === file.uid)
+  if (index !== -1) {
+    faultReportForm.images.splice(index, 1)
+  }
+}
+
+// 上传前校验
+const beforeUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过2MB')
+    return false
+  }
+  return true
+}
+
+// 提交故障报修
+const handleSubmitFaultReport = async () => {
+  if (!faultReportFormRef.value || !chargingPileStore.currentPile) return
+
+  try {
+    // 验证表单
+    await faultReportFormRef.value.validate()
+
+    submittingFaultReport.value = true
+
+    // 提交报修
+    await faultReportStore.createReport({
+      pileId: chargingPileStore.currentPile.id,
+      faultType: faultReportForm.faultType as FaultType,
+      description: faultReportForm.description,
+      images: faultReportForm.images.length > 0 ? faultReportForm.images : undefined
+    })
+
+    faultReportDialogVisible.value = false
+    ElMessage.success('故障报修提交成功，我们会尽快处理')
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('提交故障报修失败:', error)
+    }
+  } finally {
+    submittingFaultReport.value = false
+  }
+}
+
 // 组件挂载时获取充电桩详情
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -450,5 +636,11 @@ onMounted(async () => {
 
 .empty-state {
   padding: 60px 0;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 8px;
 }
 </style>

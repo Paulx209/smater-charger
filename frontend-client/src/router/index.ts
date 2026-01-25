@@ -130,6 +130,18 @@ const router = createRouter({
       name: 'warning-notice-settings',
       component: () => import('../views/WarningNoticeSettings.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/fault-reports',
+      name: 'fault-report-list',
+      component: () => import('../views/FaultReportList.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/fault-reports/:id',
+      name: 'fault-report-detail',
+      component: () => import('../views/FaultReportDetail.vue'),
+      meta: { requiresAuth: true }
     }
   ],
 })

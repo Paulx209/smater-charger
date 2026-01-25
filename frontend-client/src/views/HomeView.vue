@@ -92,6 +92,16 @@
         </div>
       </el-card>
 
+      <el-card class="action-card" shadow="hover" @click="navigateTo('/fault-reports')">
+        <div class="action-content">
+          <el-icon :size="48" color="#f56c6c">
+            <Tools />
+          </el-icon>
+          <h3>故障报修</h3>
+          <p>报告充电桩故障，查看报修记录</p>
+        </div>
+      </el-card>
+
       <el-card class="action-card" shadow="hover" @click="navigateTo('/profile')">
         <div class="action-content">
           <el-icon :size="48" color="#67c23a">
@@ -164,7 +174,8 @@ import {
   Tickets,
   Van,
   Bell,
-  Setting
+  Setting,
+  Tools
 } from '@element-plus/icons-vue'
 import { useWarningNoticeStore } from '@/stores/warningNotice'
 import CurrentChargingStatus from '@/components/CurrentChargingStatus.vue'
