@@ -56,4 +56,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      * 统计充电桩的预约记录数量
      */
     Long countByChargingPileId(Long chargingPileId);
+
+    /**
+     * 统计用户的预约记录数量
+     */
+    Long countByUserId(Long userId);
+
+    /**
+     * 统计用户取消的预约记录数量
+     */
+    Long countByUserIdAndStatus(Long userId, ReservationStatus status);
 }

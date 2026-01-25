@@ -84,4 +84,9 @@ public interface FaultReportRepository extends JpaRepository<FaultReport, Long> 
      * 统计充电桩的故障次数
      */
     Long countByChargingPileId(Long chargingPileId);
+
+    /**
+     * 统计用户的故障报修次数
+     */
+    Long countByUserId(Long userId);
 }

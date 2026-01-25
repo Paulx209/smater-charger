@@ -74,6 +74,11 @@ public enum ResultCode {
     CHARGING_PILE_IS_CHARGING(4806, "充电桩正在充电中，无法手动更改状态"),
     CHARGING_PILE_IS_RESERVED(4807, "充电桩已被预约，需要先取消预约"),
 
+    // 用户管理相关错误 49xx
+    USER_HAS_ACTIVE_CHARGING(4901, "该用户有正在进行的充电记录"),
+    PASSWORD_TOO_WEAK(4902, "密码强度不足，至少8位，包含字母和数字"),
+    INVALID_USER_STATUS(4903, "用户状态无效，只能设置为启用或禁用"),
+
     // 服务器错误 5xx
     INTERNAL_SERVER_ERROR(500, "服务器内部错误"),
     SERVICE_UNAVAILABLE(503, "服务暂时不可用"),

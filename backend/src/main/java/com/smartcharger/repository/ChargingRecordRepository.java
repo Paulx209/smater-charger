@@ -131,4 +131,39 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
      */
     @Query("SELECT MAX(cr.startTime) FROM ChargingRecord cr WHERE cr.chargingPileId = :chargingPileId")
     LocalDateTime findLastChargingTimeByChargingPileId(@Param("chargingPileId") Long chargingPileId);
+
+    /**
+     * 统计用户的充电记录数量
+     */
+    Long countByUserId(Long userId);
+
+    /**
+     * 统计用户的总充电量
+     */
+    @Query("SELECT SUM(cr.electricQuantity) FROM ChargingRecord cr WHERE cr.userId = :userId AND cr.status = 'COMPLETED'")
+    java.math.BigDecimal sumElectricQuantityByUserId(@Param("userId") Long userId);
+
+    /**
+     * 统计用户的总消费金额
+     */
+    @Query("SELECT SUM(cr.fee) FROM ChargingRecord cr WHERE cr.userId = :userId AND cr.status = 'COMPLETED'")
+    java.math.BigDecimal sumFeeByUserId(@Param("userId") Long userId);
+
+    /**
+     * 计算用户的平均充电时长（分钟）
+     */
+    @Query("SELECT AVG(TIMESTAMPDIFF(MINUTE, cr.startTime, cr.endTime)) FROM ChargingRecord cr WHERE cr.userId = :userId AND cr.status = 'COMPLETED'")
+    Double avgDurationByUserId(@Param("userId") Long userId);
+
+    /**
+     * 查询用户的最后充电时间
+     */
+    @Query("SELECT MAX(cr.startTime) FROM ChargingRecord cr WHERE cr.userId = :userId")
+    LocalDateTime findLastChargingTimeByUserId(@Param("userId") Long userId);
+
+    /**
+     * 查询用户最近N条充电记录
+     */
+    @Query("SELECT cr FROM ChargingRecord cr WHERE cr.userId = :userId ORDER BY cr.startTime DESC")
+    List<ChargingRecord> findRecentRecordsByUserId(@Param("userId") Long userId, Pageable pageable);
 }

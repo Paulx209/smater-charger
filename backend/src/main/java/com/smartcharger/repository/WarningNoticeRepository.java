@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -60,4 +61,27 @@ public interface WarningNoticeRepository extends JpaRepository<WarningNotice, Lo
      * 查询用户的通知（根据ID和用户ID）
      */
     Optional<WarningNotice> findByIdAndUserId(Long id, Long userId);
+
+    /**
+     * 统计用户的超时占位次数
+     */
+    Long countByUserIdAndType(Long userId, WarningNoticeType type);
+
+    /**
+     * 管理端：查询用户的违规记录（分页）
+     */
+    @Query("SELECT wn FROM WarningNotice wn WHERE wn.userId = :userId AND wn.type = 'OVERTIME_WARNING' AND " +
+            "(:startDate IS NULL OR wn.createdTime >= :startDate) AND " +
+            "(:endDate IS NULL OR wn.createdTime < :endDate) " +
+            "ORDER BY wn.createdTime DESC")
+    Page<WarningNotice> findViolationsByUserId(@Param("userId") Long userId,
+                                                 @Param("startDate") LocalDateTime startDate,
+                                                 @Param("endDate") LocalDateTime endDate,
+                                                 Pageable pageable);
+
+    /**
+     * 统计用户的总超时时长（分钟）
+     */
+    @Query("SELECT SUM(wn.overtimeMinutes) FROM WarningNotice wn WHERE wn.userId = :userId AND wn.type = 'OVERTIME_WARNING'")
+    Integer sumOvertimeMinutesByUserId(@Param("userId") Long userId);
 }
