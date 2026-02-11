@@ -1,6 +1,6 @@
 <template>
   <div class="charging-record-detail-container">
-    <el-card v-loading="chargingRecordStore.loading">
+    <el-card>
       <template #header>
         <div class="card-header">
           <el-button @click="handleBack" :icon="ArrowLeft">返回</el-button>
@@ -8,156 +8,177 @@
         </div>
       </template>
 
-      <div v-if="chargingRecordStore.currentRecord" class="detail-content">
-        <!-- 状态标签 -->
-        <div class="status-section">
-          <el-tag
-            :type="ChargingRecordStatusColor[chargingRecordStore.currentRecord.status]"
-            size="large"
-          >
-            {{ ChargingRecordStatusText[chargingRecordStore.currentRecord.status] }}
-          </el-tag>
+      <!-- 加载骨架屏 -->
+      <template v-if="loading">
+        <div class="skeleton-container">
+          <el-skeleton :rows="3" animated class="skeleton-section" />
+          <el-skeleton :rows="4" animated class="skeleton-section" />
+          <el-skeleton :rows="4" animated class="skeleton-section" />
         </div>
+      </template>
 
-        <!-- 充电桩信息 -->
-        <div class="section">
-          <div class="section-title">
-            <el-icon><Location /></el-icon>
-            <span>充电桩信息</span>
+      <!-- 错误状态 -->
+      <template v-else-if="error">
+        <el-result icon="error" title="加载失败" :sub-title="error">
+          <template #extra>
+            <el-button type="primary" @click="handleRetry">重试</el-button>
+          </template>
+        </el-result>
+      </template>
+
+      <!-- 正常内容 -->
+      <template v-else-if="chargingRecordStore.currentRecord">
+        <div class="detail-content">
+          <!-- 状态标签 -->
+          <div class="status-section">
+            <el-tag
+              :type="ChargingRecordStatusColor[chargingRecordStore.currentRecord.status]"
+              size="large"
+            >
+              {{ ChargingRecordStatusText[chargingRecordStore.currentRecord.status] }}
+            </el-tag>
           </div>
 
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="充电桩名称">
-              {{ chargingRecordStore.currentRecord.pileName || '未知充电桩' }}
-            </el-descriptions-item>
+          <!-- 充电桩信息 -->
+          <div class="section">
+            <div class="section-title">
+              <el-icon><Location /></el-icon>
+              <span>充电桩信息</span>
+            </div>
 
-            <el-descriptions-item label="充电桩类型">
-              <el-tag :type="chargingRecordStore.currentRecord.pileType === 'AC' ? 'success' : 'warning'">
-                {{ chargingRecordStore.currentRecord.pileType === 'AC' ? 'AC（交流慢充）' : 'DC（直流快充）' }}
-              </el-tag>
-            </el-descriptions-item>
+            <el-descriptions :column="isMobile ? 1 : 2" border>
+              <el-descriptions-item label="充电桩名称">
+                {{ chargingRecordStore.currentRecord.pileName || '未知充电桩' }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="充电桩位置" :span="2">
-              {{ chargingRecordStore.currentRecord.pileLocation || '-' }}
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
+              <el-descriptions-item label="充电桩类型">
+                <el-tag :type="chargingRecordStore.currentRecord.pileType === 'AC' ? 'success' : 'warning'">
+                  {{ chargingRecordStore.currentRecord.pileType === 'AC' ? 'AC（交流慢充）' : 'DC（直流快充）' }}
+                </el-tag>
+              </el-descriptions-item>
 
-        <!-- 车辆信息 -->
-        <div class="section">
-          <div class="section-title">
-            <el-icon><Van /></el-icon>
-            <span>车辆信息</span>
+              <el-descriptions-item label="充电桩位置" :span="isMobile ? 1 : 2">
+                {{ chargingRecordStore.currentRecord.pileLocation || '-' }}
+              </el-descriptions-item>
+            </el-descriptions>
           </div>
 
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="车牌号">
-              {{ chargingRecordStore.currentRecord.vehicleLicensePlate || '未绑定车辆' }}
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
+          <!-- 车辆信息 -->
+          <div class="section">
+            <div class="section-title">
+              <el-icon><Van /></el-icon>
+              <span>车辆信息</span>
+            </div>
 
-        <!-- 充电信息 -->
-        <div class="section">
-          <div class="section-title">
-            <el-icon><Timer /></el-icon>
-            <span>充电信息</span>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="车牌号">
+                {{ chargingRecordStore.currentRecord.vehicleLicensePlate || '未绑定车辆' }}
+              </el-descriptions-item>
+            </el-descriptions>
           </div>
 
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="开始时间">
-              {{ formatDateTime(chargingRecordStore.currentRecord.startTime) }}
-            </el-descriptions-item>
+          <!-- 充电信息 -->
+          <div class="section">
+            <div class="section-title">
+              <el-icon><Timer /></el-icon>
+              <span>充电信息</span>
+            </div>
 
-            <el-descriptions-item label="结束时间">
-              {{ chargingRecordStore.currentRecord.endTime ? formatDateTime(chargingRecordStore.currentRecord.endTime) : '充电中' }}
-            </el-descriptions-item>
+            <el-descriptions :column="isMobile ? 1 : 2" border>
+              <el-descriptions-item label="开始时间">
+                {{ formatDateTime(chargingRecordStore.currentRecord.startTime) }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="充电时长">
-              <span class="highlight-text">
-                {{ formatDuration(chargingRecordStore.currentRecord.duration) }}
-              </span>
-            </el-descriptions-item>
+              <el-descriptions-item label="结束时间">
+                {{ chargingRecordStore.currentRecord.endTime ? formatDateTime(chargingRecordStore.currentRecord.endTime) : '充电中' }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="充电量">
-              <span class="highlight-text">
-                {{ formatElectricQuantity(chargingRecordStore.currentRecord.electricQuantity) }}
-              </span>
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
+              <el-descriptions-item label="充电时长">
+                <span class="highlight-text">
+                  {{ formatDuration(chargingRecordStore.currentRecord.duration) }}
+                </span>
+              </el-descriptions-item>
 
-        <!-- 费用信息 -->
-        <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.COMPLETED" class="section">
-          <div class="section-title">
-            <el-icon><Money /></el-icon>
-            <span>费用信息</span>
+              <el-descriptions-item label="充电量">
+                <span class="highlight-text">
+                  {{ formatElectricQuantity(chargingRecordStore.currentRecord.electricQuantity) }}
+                </span>
+              </el-descriptions-item>
+            </el-descriptions>
           </div>
 
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="每度电价格">
-              {{ chargingRecordStore.currentRecord.pricePerKwh ? `¥${chargingRecordStore.currentRecord.pricePerKwh.toFixed(2)}/度` : '-' }}
-            </el-descriptions-item>
+          <!-- 费用信息 -->
+          <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.COMPLETED" class="section">
+            <div class="section-title">
+              <el-icon><Money /></el-icon>
+              <span>费用信息</span>
+            </div>
 
-            <el-descriptions-item label="服务费">
-              {{ chargingRecordStore.currentRecord.serviceFee ? `¥${chargingRecordStore.currentRecord.serviceFee.toFixed(2)}/度` : '-' }}
-            </el-descriptions-item>
+            <el-descriptions :column="isMobile ? 1 : 2" border>
+              <el-descriptions-item label="每度电价格">
+                {{ chargingRecordStore.currentRecord.pricePerKwh ? `¥${chargingRecordStore.currentRecord.pricePerKwh.toFixed(2)}/度` : '-' }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="电费">
-              <span class="fee-breakdown">
-                {{ chargingRecordStore.currentRecord.feeBreakdown ? formatFee(chargingRecordStore.currentRecord.feeBreakdown.electricityFee) : '-' }}
-              </span>
-            </el-descriptions-item>
+              <el-descriptions-item label="服务费">
+                {{ chargingRecordStore.currentRecord.serviceFee ? `¥${chargingRecordStore.currentRecord.serviceFee.toFixed(2)}/度` : '-' }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="服务费">
-              <span class="fee-breakdown">
-                {{ chargingRecordStore.currentRecord.feeBreakdown ? formatFee(chargingRecordStore.currentRecord.feeBreakdown.serviceFee) : '-' }}
-              </span>
-            </el-descriptions-item>
+              <el-descriptions-item label="电费">
+                <span class="fee-breakdown">
+                  {{ chargingRecordStore.currentRecord.feeBreakdown ? formatFee(chargingRecordStore.currentRecord.feeBreakdown.electricityFee) : '-' }}
+                </span>
+              </el-descriptions-item>
 
-            <el-descriptions-item label="总费用" :span="2">
-              <span class="total-fee">
-                {{ formatFee(chargingRecordStore.currentRecord.fee) }}
-              </span>
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
+              <el-descriptions-item label="服务费">
+                <span class="fee-breakdown">
+                  {{ chargingRecordStore.currentRecord.feeBreakdown ? formatFee(chargingRecordStore.currentRecord.feeBreakdown.serviceFee) : '-' }}
+                </span>
+              </el-descriptions-item>
 
-        <!-- 记录信息 -->
-        <div class="section">
-          <div class="section-title">
-            <el-icon><InfoFilled /></el-icon>
-            <span>记录信息</span>
+              <el-descriptions-item label="总费用" :span="isMobile ? 1 : 2">
+                <span class="total-fee">
+                  {{ formatFee(chargingRecordStore.currentRecord.fee) }}
+                </span>
+              </el-descriptions-item>
+            </el-descriptions>
           </div>
 
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="记录ID">
-              {{ chargingRecordStore.currentRecord.id }}
-            </el-descriptions-item>
+          <!-- 记录信息 -->
+          <div class="section">
+            <div class="section-title">
+              <el-icon><InfoFilled /></el-icon>
+              <span>记录信息</span>
+            </div>
 
-            <el-descriptions-item label="创建时间">
-              {{ formatDateTime(chargingRecordStore.currentRecord.createdTime) }}
-            </el-descriptions-item>
+            <el-descriptions :column="isMobile ? 1 : 2" border>
+              <el-descriptions-item label="记录ID">
+                {{ chargingRecordStore.currentRecord.id }}
+              </el-descriptions-item>
 
-            <el-descriptions-item label="更新时间" :span="2">
-              {{ formatDateTime(chargingRecordStore.currentRecord.updatedTime) }}
-            </el-descriptions-item>
-          </el-descriptions>
+              <el-descriptions-item label="创建时间">
+                {{ formatDateTime(chargingRecordStore.currentRecord.createdTime) }}
+              </el-descriptions-item>
+
+              <el-descriptions-item label="更新时间" :span="isMobile ? 1 : 2">
+                {{ formatDateTime(chargingRecordStore.currentRecord.updatedTime) }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.CHARGING" class="action-section">
+            <el-button
+              type="danger"
+              size="large"
+              @click="handleEndCharging"
+              :loading="endingCharging"
+            >
+              <el-icon><CircleClose /></el-icon>
+              结束充电
+            </el-button>
+          </div>
         </div>
-
-        <!-- 操作按钮 -->
-        <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.CHARGING" class="action-section">
-          <el-button
-            type="danger"
-            size="large"
-            @click="handleEndCharging"
-            :loading="endingCharging"
-          >
-            <el-icon><CircleClose /></el-icon>
-            结束充电
-          </el-button>
-        </div>
-      </div>
+      </template>
 
       <div v-else class="empty-state">
         <el-empty description="充电记录不存在" />
@@ -168,7 +189,7 @@
     <el-dialog
       v-model="endChargingDialogVisible"
       title="结束充电"
-      width="500px"
+      :width="isMobile ? '90%' : '500px'"
       :close-on-click-modal="false"
     >
       <el-form
@@ -215,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
@@ -240,6 +261,18 @@ import {
 const router = useRouter()
 const route = useRoute()
 const chargingRecordStore = useChargingRecordStore()
+
+// 加载和错误状态
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// 响应式布局
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value < 768)
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
 
 // 结束充电状态
 const endingCharging = ref(false)
@@ -275,6 +308,11 @@ const handleBack = () => {
   router.back()
 }
 
+// 重试
+const handleRetry = async () => {
+  await loadDetail()
+}
+
 // 设置充电量
 const setElectricQuantity = (quantity: number) => {
   endChargingForm.value.electricQuantity = quantity
@@ -291,26 +329,22 @@ const confirmEndCharging = async () => {
   if (!endChargingFormRef.value || !chargingRecordStore.currentRecord) return
 
   try {
-    // 验证表单
     await endChargingFormRef.value.validate()
 
     endingCharging.value = true
 
-    // 调用结束充电接口
     await chargingRecordStore.finishCharging(chargingRecordStore.currentRecord.id, {
       electricQuantity: endChargingForm.value.electricQuantity
     })
 
-    // 关闭对话框
     endChargingDialogVisible.value = false
 
-    // 重新加载充电记录详情
     const id = Number(route.params.id)
-    await chargingRecordStore.fetchChargingRecordDetail(id)
+    await loadDetail()
 
     ElMessage.success('充电已结束')
-  } catch (error) {
-    console.error('结束充电失败:', error)
+  } catch (err: any) {
+    ElMessage.error(err.message || '结束充电失败')
   } finally {
     endingCharging.value = false
   }
@@ -329,22 +363,35 @@ const formatDateTime = (dateTime: string) => {
   })
 }
 
-// 组件挂载时获取充电记录详情
-onMounted(async () => {
+// 加载详情
+const loadDetail = async () => {
   const id = Number(route.params.id)
 
   if (!id || isNaN(id)) {
     ElMessage.error('充电记录ID无效')
-    router.push('/charging-record')
+    router.push('/charging-records')
     return
   }
 
   try {
+    loading.value = true
+    error.value = null
     await chargingRecordStore.fetchChargingRecordDetail(id)
-  } catch (error) {
-    console.error('获取充电记录详情失败:', error)
-    router.push('/charging-record')
+  } catch (err: any) {
+    error.value = err.message || '加载失败，请稍后重试'
+  } finally {
+    loading.value = false
   }
+}
+
+// 组件挂载时获取充电记录详情
+onMounted(async () => {
+  window.addEventListener('resize', handleResize)
+  await loadDetail()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -365,6 +412,14 @@ onMounted(async () => {
   font-size: 18px;
   font-weight: 600;
   color: #303133;
+}
+
+.skeleton-container {
+  padding: 20px 0;
+}
+
+.skeleton-section {
+  margin-bottom: 30px;
 }
 
 .detail-content {
@@ -432,5 +487,48 @@ onMounted(async () => {
   margin-top: 5px;
   font-size: 12px;
   color: #909399;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .charging-record-detail-container {
+    padding: 12px;
+  }
+
+  .header-title {
+    font-size: 16px;
+  }
+
+  .detail-content {
+    padding: 12px 0;
+  }
+
+  .section {
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  .highlight-text {
+    font-size: 14px;
+  }
+
+  .fee-breakdown {
+    font-size: 14px;
+  }
+
+  .total-fee {
+    font-size: 20px;
+  }
+
+  .action-section {
+    flex-direction: column;
+  }
+
+  .action-section .el-button {
+    width: 100%;
+  }
 }
 </style>

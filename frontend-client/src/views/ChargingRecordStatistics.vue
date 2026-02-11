@@ -7,157 +7,178 @@
         </div>
       </template>
 
-      <!-- 时间选择器 -->
-      <div class="time-selector">
-        <el-form :inline="true" :model="timeForm" class="time-form">
-          <el-form-item label="年份">
-            <el-date-picker
-              v-model="timeForm.year"
-              type="year"
-              placeholder="选择年份"
-              format="YYYY"
-              value-format="YYYY"
-              style="width: 150px"
-              @change="handleYearChange"
-            />
-          </el-form-item>
+      <!-- 加载骨架屏 -->
+      <template v-if="loading">
+        <div class="skeleton-container">
+          <el-skeleton :rows="2" animated class="skeleton-section" />
+          <el-skeleton :rows="6" animated class="skeleton-section" />
+        </div>
+      </template>
 
-          <el-form-item label="月份">
-            <el-select
-              v-model="timeForm.month"
-              placeholder="选择月份"
-              style="width: 120px"
-              @change="handleMonthChange"
-            >
-              <el-option
-                v-for="month in 12"
-                :key="month"
-                :label="`${month}月`"
-                :value="month"
+      <!-- 错误状态 -->
+      <template v-else-if="error">
+        <el-result icon="error" title="加载失败" :sub-title="error">
+          <template #extra>
+            <el-button type="primary" @click="handleRetry">重试</el-button>
+          </template>
+        </el-result>
+      </template>
+
+      <!-- 正常内容 -->
+      <template v-else>
+        <!-- 时间选择器 -->
+        <div class="time-selector">
+          <el-form :inline="true" :model="timeForm" class="time-form">
+            <el-form-item label="年份">
+              <el-date-picker
+                v-model="timeForm.year"
+                type="year"
+                placeholder="选择年份"
+                format="YYYY"
+                value-format="YYYY"
+                :style="{ width: isMobile ? '100%' : '150px' }"
+                @change="handleYearChange"
               />
-            </el-select>
-          </el-form-item>
+            </el-form-item>
 
-          <el-form-item>
-            <el-button type="primary" @click="loadStatistics">查询</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
+            <el-form-item label="月份">
+              <el-select
+                v-model="timeForm.month"
+                placeholder="选择月份"
+                :style="{ width: isMobile ? '100%' : '120px' }"
+                @change="handleMonthChange"
+              >
+                <el-option
+                  v-for="month in 12"
+                  :key="month"
+                  :label="`${month}月`"
+                  :value="month"
+                />
+              </el-select>
+            </el-form-item>
 
-      <!-- 年度统计 -->
-      <div v-if="yearlyStatistics" class="section">
-        <div class="section-title">
-          <el-icon><TrendCharts /></el-icon>
-          <span>{{ timeForm.year }} 年度统计</span>
+            <el-form-item>
+              <el-button type="primary" @click="loadStatistics" :style="{ width: isMobile ? '100%' : 'auto' }">查询</el-button>
+            </el-form-item>
+          </el-form>
         </div>
 
-        <div class="summary-cards">
-          <el-card class="summary-card">
-            <div class="summary-label">总充电次数</div>
-            <div class="summary-value">{{ yearlyStatistics.totalCount }} 次</div>
-          </el-card>
+        <!-- 年度统计 -->
+        <div v-if="yearlyStatistics" class="section">
+          <div class="section-title">
+            <el-icon><TrendCharts /></el-icon>
+            <span>{{ timeForm.year }} 年度统计</span>
+          </div>
 
-          <el-card class="summary-card">
-            <div class="summary-label">总充电量</div>
-            <div class="summary-value">{{ yearlyStatistics.totalElectricQuantity.toFixed(2) }} 度</div>
-          </el-card>
+          <div class="summary-cards">
+            <el-card class="summary-card">
+              <div class="summary-label">总充电次数</div>
+              <div class="summary-value">{{ yearlyStatistics.totalCount }} 次</div>
+            </el-card>
 
-          <el-card class="summary-card">
-            <div class="summary-label">总费用</div>
-            <div class="summary-value fee">¥{{ yearlyStatistics.totalFee.toFixed(2) }}</div>
-          </el-card>
+            <el-card class="summary-card">
+              <div class="summary-label">总充电量</div>
+              <div class="summary-value">{{ yearlyStatistics.totalElectricQuantity.toFixed(2) }} 度</div>
+            </el-card>
+
+            <el-card class="summary-card">
+              <div class="summary-label">总费用</div>
+              <div class="summary-value fee">¥{{ yearlyStatistics.totalFee.toFixed(2) }}</div>
+            </el-card>
+          </div>
+
+          <!-- 年度月度明细表格 -->
+          <div class="statistics-table">
+            <el-table :data="yearlyStatistics.records" stripe border>
+              <el-table-column prop="month" label="月份" :width="isMobile ? 80 : 100">
+                <template #default="{ row }">
+                  {{ row.month }}月
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="count" label="充电次数" :width="isMobile ? 90 : 120">
+                <template #default="{ row }">
+                  {{ row.count }} 次
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="electricQuantity" label="充电量" :width="isMobile ? 100 : 150">
+                <template #default="{ row }">
+                  {{ row.electricQuantity.toFixed(2) }} 度
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="fee" label="费用">
+                <template #default="{ row }">
+                  <span class="fee-text">¥{{ row.fee.toFixed(2) }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </div>
 
-        <!-- 年度月度明细表格 -->
-        <div class="statistics-table">
-          <el-table :data="yearlyStatistics.records" stripe border>
-            <el-table-column prop="month" label="月份" width="100">
-              <template #default="{ row }">
-                {{ row.month }}月
-              </template>
-            </el-table-column>
+        <!-- 月度统计 -->
+        <div v-if="monthlyStatistics" class="section">
+          <div class="section-title">
+            <el-icon><Calendar /></el-icon>
+            <span>{{ timeForm.year }} 年 {{ timeForm.month }} 月统计</span>
+          </div>
 
-            <el-table-column prop="count" label="充电次数" width="120">
-              <template #default="{ row }">
-                {{ row.count }} 次
-              </template>
-            </el-table-column>
+          <div class="summary-cards">
+            <el-card class="summary-card">
+              <div class="summary-label">总充电次数</div>
+              <div class="summary-value">{{ monthlyStatistics.totalCount }} 次</div>
+            </el-card>
 
-            <el-table-column prop="electricQuantity" label="充电量" width="150">
-              <template #default="{ row }">
-                {{ row.electricQuantity.toFixed(2) }} 度
-              </template>
-            </el-table-column>
+            <el-card class="summary-card">
+              <div class="summary-label">总充电量</div>
+              <div class="summary-value">{{ monthlyStatistics.totalElectricQuantity.toFixed(2) }} 度</div>
+            </el-card>
 
-            <el-table-column prop="fee" label="费用">
-              <template #default="{ row }">
-                <span class="fee-text">¥{{ row.fee.toFixed(2) }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </div>
+            <el-card class="summary-card">
+              <div class="summary-label">总费用</div>
+              <div class="summary-value fee">¥{{ monthlyStatistics.totalFee.toFixed(2) }}</div>
+            </el-card>
+          </div>
 
-      <!-- 月度统计 -->
-      <div v-if="monthlyStatistics" class="section">
-        <div class="section-title">
-          <el-icon><Calendar /></el-icon>
-          <span>{{ timeForm.year }} 年 {{ timeForm.month }} 月统计</span>
-        </div>
+          <!-- 月度日度明细表格 -->
+          <div class="statistics-table">
+            <el-table :data="monthlyStatistics.records" stripe border>
+              <el-table-column prop="date" label="日期" :width="isMobile ? 100 : 150" />
 
-        <div class="summary-cards">
-          <el-card class="summary-card">
-            <div class="summary-label">总充电次数</div>
-            <div class="summary-value">{{ monthlyStatistics.totalCount }} 次</div>
-          </el-card>
+              <el-table-column prop="count" label="充电次数" :width="isMobile ? 90 : 120">
+                <template #default="{ row }">
+                  {{ row.count }} 次
+                </template>
+              </el-table-column>
 
-          <el-card class="summary-card">
-            <div class="summary-label">总充电量</div>
-            <div class="summary-value">{{ monthlyStatistics.totalElectricQuantity.toFixed(2) }} 度</div>
-          </el-card>
+              <el-table-column prop="electricQuantity" label="充电量" :width="isMobile ? 100 : 150">
+                <template #default="{ row }">
+                  {{ row.electricQuantity.toFixed(2) }} 度
+                </template>
+              </el-table-column>
 
-          <el-card class="summary-card">
-            <div class="summary-label">总费用</div>
-            <div class="summary-value fee">¥{{ monthlyStatistics.totalFee.toFixed(2) }}</div>
-          </el-card>
+              <el-table-column prop="fee" label="费用">
+                <template #default="{ row }">
+                  <span class="fee-text">¥{{ row.fee.toFixed(2) }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </div>
 
-        <!-- 月度日度明细表格 -->
-        <div class="statistics-table">
-          <el-table :data="monthlyStatistics.records" stripe border>
-            <el-table-column prop="date" label="日期" width="150" />
-
-            <el-table-column prop="count" label="充电次数" width="120">
-              <template #default="{ row }">
-                {{ row.count }} 次
-              </template>
-            </el-table-column>
-
-            <el-table-column prop="electricQuantity" label="充电量" width="150">
-              <template #default="{ row }">
-                {{ row.electricQuantity.toFixed(2) }} 度
-              </template>
-            </el-table-column>
-
-            <el-table-column prop="fee" label="费用">
-              <template #default="{ row }">
-                <span class="fee-text">¥{{ row.fee.toFixed(2) }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
+        <!-- 空状态 -->
+        <div v-if="!yearlyStatistics && !monthlyStatistics" class="empty-state">
+          <el-empty description="暂无统计数据，请选择年份和月份查询" />
         </div>
-      </div>
-
-      <!-- 空状态 -->
-      <div v-if="!yearlyStatistics && !monthlyStatistics && !chargingRecordStore.loading" class="empty-state">
-        <el-empty description="暂无统计数据，请选择年份和月份查询" />
-      </div>
+      </template>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, onUnmounted, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { TrendCharts, Calendar } from '@element-plus/icons-vue'
 import { useChargingRecordStore } from '@/stores/chargingRecord'
 import type {
@@ -166,6 +187,18 @@ import type {
 } from '@/types/chargingRecord'
 
 const chargingRecordStore = useChargingRecordStore()
+
+// 加载和错误状态
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// 响应式布局
+const windowWidth = ref(window.innerWidth)
+const isMobile = computed(() => windowWidth.value < 768)
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
 
 // 时间表单
 const timeForm = reactive({
@@ -188,16 +221,22 @@ const handleMonthChange = () => {
   monthlyStatistics.value = null
 }
 
+// 重试
+const handleRetry = async () => {
+  await loadStatistics()
+}
+
 // 加载统计数据
 const loadStatistics = async () => {
   try {
-    // 加载年度统计
+    loading.value = true
+    error.value = null
+
     if (timeForm.year) {
       const yearData = await chargingRecordStore.fetchYearlyStatistics(Number(timeForm.year))
       yearlyStatistics.value = yearData
     }
 
-    // 加载月度统计
     if (timeForm.year && timeForm.month) {
       const monthData = await chargingRecordStore.fetchMonthlyStatistics(
         Number(timeForm.year),
@@ -205,14 +244,22 @@ const loadStatistics = async () => {
       )
       monthlyStatistics.value = monthData
     }
-  } catch (error) {
-    console.error('加载统计数据失败:', error)
+  } catch (err: any) {
+    error.value = err.message || '加载统计数据失败，请稍后重试'
+    ElMessage.error(error.value)
+  } finally {
+    loading.value = false
   }
 }
 
 // 组件挂载时加载当前年月的统计数据
 onMounted(async () => {
+  window.addEventListener('resize', handleResize)
   await loadStatistics()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -233,6 +280,14 @@ onMounted(async () => {
   align-items: center;
   font-size: 18px;
   font-weight: 600;
+}
+
+.skeleton-container {
+  padding: 20px 0;
+}
+
+.skeleton-section {
+  margin-bottom: 30px;
 }
 
 .time-selector {
@@ -307,5 +362,51 @@ onMounted(async () => {
 
 .empty-state {
   padding: 60px 0;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .charging-record-statistics-container {
+    padding: 12px;
+  }
+
+  .time-selector {
+    padding: 12px;
+  }
+
+  .time-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .time-form :deep(.el-form-item) {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+
+  .summary-value {
+    font-size: 24px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  .statistics-table {
+    overflow-x: auto;
+  }
+
+  .statistics-table :deep(.el-table) {
+    font-size: 12px;
+  }
 }
 </style>
