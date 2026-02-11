@@ -2,6 +2,8 @@ package com.smartcharger.common.exception;
 
 import com.smartcharger.common.result.Result;
 import com.smartcharger.common.result.ResultCode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,9 +17,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-/**
- * 全局异常处理器
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -28,7 +27,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     @ResponseStatus(HttpStatus.OK)
     public Result<?> handleBusinessException(BusinessException e) {
-        log.error("业务异常: code={}, message={}", e.getCode(), e.getMessage());
+        log.error("业务异常: code={}, message={}", e.getCode(), e.getMessage(), e);
         return Result.error(e.getCode(), e.getMessage());
     }
 
@@ -41,20 +40,27 @@ public class GlobalExceptionHandler {
         String errorMessage = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        log.error("参数校验异常: {}", errorMessage);
+        log.error("参数校验异常: {}", errorMessage, e);
         return Result.error(ResultCode.BAD_REQUEST, errorMessage);
     }
 
-    /**
-     * 处理参数绑定异常
-     */
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<?> handleBindException(BindException e) {
         String errorMessage = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        log.error("参数绑定异常: {}", errorMessage);
+        log.error("参数绑定异常: {}", errorMessage, e);
+        return Result.error(ResultCode.BAD_REQUEST, errorMessage);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<?> handleConstraintViolationException(ConstraintViolationException e) {
+        String errorMessage = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        log.error("参数约束异常: {}", errorMessage, e);
         return Result.error(ResultCode.BAD_REQUEST, errorMessage);
     }
 
@@ -64,7 +70,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public Result<?> handleAuthenticationException(AuthenticationException e) {
-        log.error("认证异常: {}", e.getMessage());
+        log.error("认证异常: {}", e.getMessage(), e);
         return Result.error(ResultCode.UNAUTHORIZED);
     }
 
@@ -74,7 +80,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public Result<?> handleAccessDeniedException(AccessDeniedException e) {
-        log.error("权限异常: {}", e.getMessage());
+        log.error("权限异常: {}", e.getMessage(), e);
         return Result.error(ResultCode.FORBIDDEN);
     }
 

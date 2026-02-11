@@ -14,8 +14,11 @@ import com.smartcharger.entity.enums.ReservationStatus;
 import com.smartcharger.repository.*;
 import com.smartcharger.service.ChargingRecordService;
 import com.smartcharger.service.PriceConfigService;
+import com.smartcharger.service.StartChargingTxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -45,85 +49,70 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     private final VehicleRepository vehicleRepository;
     private final ReservationRepository reservationRepository;
     private final PriceConfigService priceConfigService;
+    private final RedissonClient redissonClient;
+    private final StartChargingTxService startChargingTxService;
 
     @Override
-    @Transactional
     public ChargingRecordResponse startCharging(Long userId, ChargingRecordStartRequest request) {
-        // 1. 验证用户是否已有充电中的记录
-        Optional<ChargingRecord> existingRecord = chargingRecordRepository.findByUserIdAndStatus(
-                userId, ChargingRecordStatus.CHARGING);
-        if (existingRecord.isPresent()) {
-            throw new BusinessException(ResultCode.USER_ALREADY_CHARGING);
+        String userLockKey = "charging:start:user:" + userId;
+        String pileLockKey = "charging:start:pile:" + request.getChargingPileId();
+
+        RLock userLock = null;
+        RLock pileLock = null;
+
+        try {
+            userLock = redissonClient.getLock(userLockKey);
+            if (!userLock.tryLock(5, 30, TimeUnit.SECONDS)) {
+                log.warn("Failed to acquire lock for user {}: timeout", userId);
+                Optional<ChargingRecord> existingRecord = chargingRecordRepository.findByUserIdAndStatus(
+                        userId, ChargingRecordStatus.CHARGING);
+                if (existingRecord.isPresent()) {
+                    throw new BusinessException(ResultCode.USER_ALREADY_CHARGING);
+                }
+                throw new BusinessException(ResultCode.SYSTEM_BUSY);
+            }
+            log.info("Acquired lock for user {}", userId);
+
+            pileLock = redissonClient.getLock(pileLockKey);
+            if (!pileLock.tryLock(5, 30, TimeUnit.SECONDS)) {
+                log.warn("Failed to acquire lock for pile {}: timeout", request.getChargingPileId());
+                ChargingPile pile = chargingPileRepository.findById(request.getChargingPileId()).orElse(null);
+                if (pile != null && pile.getStatus() == ChargingPileStatus.CHARGING) {
+                    throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
+                }
+                throw new BusinessException(ResultCode.CHARGING_PILE_BUSY);
+            }
+            log.info("Acquired lock for user {} and pile {}", userId, request.getChargingPileId());
+
+            return startChargingTxService.startChargingInTx(userId, request);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Lock acquisition interrupted for user {}", userId, e);
+            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Redis connection error or unexpected exception for user {}", userId, e);
+            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR);
+        } finally {
+            if (pileLock != null && pileLock.isHeldByCurrentThread()) {
+                try {
+                    pileLock.unlock();
+                    log.info("Released lock for pile {}", request.getChargingPileId());
+                } catch (Exception e) {
+                    log.error("Failed to release pile lock", e);
+                }
+            }
+            if (userLock != null && userLock.isHeldByCurrentThread()) {
+                try {
+                    userLock.unlock();
+                    log.info("Released lock for user {}", userId);
+                } catch (Exception e) {
+                    log.error("Failed to release user lock", e);
+                }
+            }
         }
-
-        // 2. 验证充电桩是否存在
-        ChargingPile chargingPile = chargingPileRepository.findById(request.getChargingPileId())
-                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
-
-        // 3. 验证充电桩状态（不能是充电中或故障）
-        if (chargingPile.getStatus() == ChargingPileStatus.CHARGING) {
-            throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
-        }
-        if (chargingPile.getStatus() == ChargingPileStatus.FAULT) {
-            throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
-        }
-
-        // 4. 检查充电桩是否有有效预约（无论充电桩状态如何，都要检查）
-        LocalDateTime now = LocalDateTime.now();
-        List<Reservation> validReservations = reservationRepository
-                .findByChargingPileIdAndStatusAndEndTimeAfter(
-                        request.getChargingPileId(),
-                        ReservationStatus.PENDING,
-                        now
-                );
-
-        // 查找当前用户的有效预约（预约开始时间前30分钟内可用）
-        Reservation userReservation = validReservations.stream()
-                .filter(r -> r.getUserId().equals(userId) &&
-                        r.getStartTime().isBefore(now.plusMinutes(30)))
-                .findFirst()
-                .orElse(null);
-
-        // 查找其他用户的有效预约
-        boolean hasOtherUserReservation = validReservations.stream()
-                .anyMatch(r -> !r.getUserId().equals(userId));
-
-        // 如果有其他用户的预约，拒绝充电
-        if (hasOtherUserReservation) {
-            throw new BusinessException(ResultCode.NO_VALID_RESERVATION);
-        }
-
-        // 5. 如果提供了车辆ID，验证车辆是否存在且属于当前用户
-        if (request.getVehicleId() != null) {
-            Vehicle vehicle = vehicleRepository.findByIdAndUserId(request.getVehicleId(), userId)
-                    .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND));
-        }
-
-        // 6. 创建充电记录
-        ChargingRecord chargingRecord = new ChargingRecord();
-        chargingRecord.setUserId(userId);
-        chargingRecord.setChargingPileId(request.getChargingPileId());
-        chargingRecord.setVehicleId(request.getVehicleId());
-        chargingRecord.setStartTime(LocalDateTime.now());
-        chargingRecord.setStatus(ChargingRecordStatus.CHARGING);
-
-        chargingRecord = chargingRecordRepository.save(chargingRecord);
-
-        // 7. 如果使用了预约，更新预约状态为已完成
-        if (userReservation != null) {
-            userReservation.setStatus(ReservationStatus.COMPLETED);
-            reservationRepository.save(userReservation);
-            log.info("使用预约开始充电: userId={}, reservationId={}", userId, userReservation.getId());
-        }
-
-        // 8. 更新充电桩状态为"充电中"
-        chargingPile.setStatus(ChargingPileStatus.CHARGING);
-        chargingPileRepository.save(chargingPile);
-
-        log.info("开始充电成功: userId={}, recordId={}, pileId={}",
-                userId, chargingRecord.getId(), request.getChargingPileId());
-
-        return convertToResponse(chargingRecord, chargingPile, null);
     }
 
     @Override
@@ -180,6 +169,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ChargingRecordResponse> getChargingRecordList(Long userId, ChargingRecordStatus status,
                                                                 LocalDate startDate, LocalDate endDate,
                                                                 Integer page, Integer size) {
@@ -187,7 +177,6 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
         Page<ChargingRecord> recordPage;
 
-        // 根据查询条件查询
         if (status != null && startDate != null && endDate != null) {
             LocalDateTime startDateTime = startDate.atStartOfDay();
             LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
@@ -204,41 +193,42 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
             recordPage = chargingRecordRepository.findByUserId(userId, pageable);
         }
 
-        return recordPage.map(record -> {
-            ChargingPile pile = chargingPileRepository.findById(record.getChargingPileId()).orElse(null);
-            Vehicle vehicle = record.getVehicleId() != null ?
-                    vehicleRepository.findById(record.getVehicleId()).orElse(null) : null;
-            return convertToResponse(record, pile, vehicle);
-        });
+        List<ChargingRecord> records = recordPage.getContent();
+        Map<Long, ChargingPile> pileMap = batchFetchPiles(records);
+        Map<Long, Vehicle> vehicleMap = batchFetchVehicles(records);
+
+        List<ChargingRecordResponse> responses = records.stream()
+                .map(record -> convertToResponse(
+                        record,
+                        pileMap.get(record.getChargingPileId()),
+                        vehicleMap.get(record.getVehicleId())))
+                .collect(Collectors.toList());
+
+        return new org.springframework.data.domain.PageImpl<>(responses, pageable, recordPage.getTotalElements());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ChargingRecordResponse getChargingRecordDetail(Long userId, Long recordId) {
-        // 1. 查询充电记录
         ChargingRecord chargingRecord = chargingRecordRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
 
-        // 2. 验证记录是否属于当前用户
         if (!chargingRecord.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 3. 关联查询充电桩信息、车辆信息
         ChargingPile pile = chargingPileRepository.findById(chargingRecord.getChargingPileId()).orElse(null);
         Vehicle vehicle = chargingRecord.getVehicleId() != null ?
                 vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null) : null;
 
-        // 4. 构建响应（包含费用明细）
         ChargingRecordResponse response = convertToResponse(chargingRecord, pile, vehicle);
 
-        // 5. 如果是已完成状态，添加费用明细
         if (chargingRecord.getStatus() == ChargingRecordStatus.COMPLETED && pile != null) {
             try {
                 var priceConfig = priceConfigService.getCurrentPriceConfig(pile.getType().name());
                 response.setPricePerKwh(priceConfig.getPricePerKwh());
                 response.setServiceFee(priceConfig.getServiceFee());
 
-                // 计算费用明细
                 BigDecimal electricityFee = chargingRecord.getElectricQuantity()
                         .multiply(priceConfig.getPricePerKwh())
                         .setScale(2, RoundingMode.HALF_UP);
@@ -387,6 +377,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ChargingRecordResponse> getAllChargingRecords(Long userId, Long chargingPileId,
                                                                 ChargingRecordStatus status,
                                                                 LocalDate startDate, LocalDate endDate,
@@ -399,12 +390,54 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         Page<ChargingRecord> recordPage = chargingRecordRepository.findByAdminFilters(
                 userId, chargingPileId, status, startDateTime, endDateTime, pageable);
 
-        return recordPage.map(record -> {
-            ChargingPile pile = chargingPileRepository.findById(record.getChargingPileId()).orElse(null);
-            Vehicle vehicle = record.getVehicleId() != null ?
-                    vehicleRepository.findById(record.getVehicleId()).orElse(null) : null;
-            return convertToResponse(record, pile, vehicle);
-        });
+        List<ChargingRecord> records = recordPage.getContent();
+        Map<Long, ChargingPile> pileMap = batchFetchPiles(records);
+        Map<Long, Vehicle> vehicleMap = batchFetchVehicles(records);
+
+        List<ChargingRecordResponse> responses = records.stream()
+                .map(record -> convertToResponse(
+                        record,
+                        pileMap.get(record.getChargingPileId()),
+                        vehicleMap.get(record.getVehicleId())))
+                .collect(Collectors.toList());
+
+        return new org.springframework.data.domain.PageImpl<>(responses, pageable, recordPage.getTotalElements());
+    }
+
+    private Map<Long, ChargingPile> batchFetchPiles(List<ChargingRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> pileIds = records.stream()
+                .map(ChargingRecord::getChargingPileId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (pileIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return chargingPileRepository.findAllById(pileIds).stream()
+                .collect(Collectors.toMap(ChargingPile::getId, pile -> pile));
+    }
+
+    private Map<Long, Vehicle> batchFetchVehicles(List<ChargingRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> vehicleIds = records.stream()
+                .map(ChargingRecord::getVehicleId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (vehicleIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return vehicleRepository.findAllById(vehicleIds).stream()
+                .collect(Collectors.toMap(Vehicle::getId, vehicle -> vehicle));
     }
 
     /**
@@ -425,7 +458,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .duration(record.getDuration())
                 .electricQuantity(record.getElectricQuantity())
                 .fee(record.getFee())
-                .status(record.getStatus())
+                .status(record.getStatus().name())
                 .statusDesc(record.getStatus().getDescription())
                 .createdTime(record.getCreatedTime())
                 .updatedTime(record.getUpdatedTime())

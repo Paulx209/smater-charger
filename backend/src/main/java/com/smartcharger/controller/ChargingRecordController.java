@@ -9,23 +9,24 @@ import com.smartcharger.dto.response.ChargingStatisticsYearlyResponse;
 import com.smartcharger.entity.enums.ChargingRecordStatus;
 import com.smartcharger.service.ChargingRecordService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-/**
- * 充电记录管理控制器
- */
 @Slf4j
 @RestController
 @RequestMapping("/charging-record")
 @RequiredArgsConstructor
+@Validated
 public class ChargingRecordController {
 
     private final ChargingRecordService chargingRecordService;
@@ -51,16 +52,13 @@ public class ChargingRecordController {
         return Result.success(response);
     }
 
-    /**
-     * 查询充电记录列表
-     */
     @GetMapping
     public Result<Page<ChargingRecordResponse>> getChargingRecordList(
             @RequestParam(required = false) ChargingRecordStatus status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "1") @Min(1) Integer page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
         Long userId = getCurrentUserId();
         Page<ChargingRecordResponse> result = chargingRecordService.getChargingRecordList(
                 userId, status, startDate, endDate, page, size);
@@ -109,9 +107,6 @@ public class ChargingRecordController {
         return Result.success(response);
     }
 
-    /**
-     * 管理端：查询所有充电记录
-     */
     @GetMapping("/admin/all")
     public Result<Page<ChargingRecordResponse>> getAllChargingRecords(
             @RequestParam(required = false) Long userId,
@@ -119,8 +114,8 @@ public class ChargingRecordController {
             @RequestParam(required = false) ChargingRecordStatus status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "1") @Min(1) Integer page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
         Page<ChargingRecordResponse> result = chargingRecordService.getAllChargingRecords(
                 userId, chargingPileId, status, startDate, endDate, page, size);
         return Result.success(result);

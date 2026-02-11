@@ -50,6 +50,7 @@ public enum ResultCode {
     USER_ALREADY_CHARGING(4402, "您已有正在进行的充电记录"),
     CHARGING_RECORD_NOT_CHARGING(4403, "充电记录不是充电中状态"),
     NO_VALID_RESERVATION(4404, "您没有该充电桩的有效预约"),
+    CHARGING_PILE_BUSY(4405, "充电桩繁忙，请稍后再试"),
 
     // 预警通知相关错误 45xx
     WARNING_NOTICE_NOT_FOUND(4501, "预警通知不存在"),
