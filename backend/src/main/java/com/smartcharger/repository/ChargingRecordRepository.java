@@ -166,4 +166,22 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
      */
     @Query("SELECT cr FROM ChargingRecord cr WHERE cr.userId = :userId ORDER BY cr.startTime DESC")
     List<ChargingRecord> findRecentRecordsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT COUNT(DISTINCT cr.chargingPileId) FROM ChargingRecord cr WHERE cr.startTime >= :startTime AND cr.startTime < :endTime")
+    Long countUsedChargingPilesByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT SUM(cr.fee) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime")
+    java.math.BigDecimal sumCompletedFeeByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT COUNT(cr) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime")
+    Long countCompletedRecordsByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT DATE(cr.startTime), SUM(cr.fee), COUNT(cr) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime GROUP BY DATE(cr.startTime) ORDER BY DATE(cr.startTime)")
+    List<Object[]> aggregateDailyRevenueByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT COUNT(DISTINCT cr.userId) FROM ChargingRecord cr WHERE cr.startTime >= :startTime AND cr.startTime < :endTime")
+    Long countDistinctActiveUsersByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
+    @Query("SELECT DATE(cr.startTime), COUNT(DISTINCT cr.userId) FROM ChargingRecord cr WHERE cr.startTime >= :startTime AND cr.startTime < :endTime GROUP BY DATE(cr.startTime) ORDER BY DATE(cr.startTime)")
+    List<Object[]> countDailyDistinctActiveUsersByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 }

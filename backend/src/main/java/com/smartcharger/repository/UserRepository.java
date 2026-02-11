@@ -94,4 +94,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "ORDER BY u.createdTime DESC")
     List<User> findActiveUsersByStatus(@Param("status") Integer status,
                                         @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo);
+
+    Long countByCreatedTimeGreaterThanEqualAndCreatedTimeLessThan(LocalDateTime startTime, LocalDateTime endTime);
+
+    @Query("SELECT DATE(u.createdTime), COUNT(u) FROM User u WHERE u.createdTime >= :startTime AND u.createdTime < :endTime GROUP BY DATE(u.createdTime) ORDER BY DATE(u.createdTime)")
+    List<Object[]> countDailyNewUsersByCreatedTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 }

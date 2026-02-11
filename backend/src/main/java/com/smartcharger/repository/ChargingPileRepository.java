@@ -71,4 +71,6 @@ public interface ChargingPileRepository extends JpaRepository<ChargingPile, Long
                                                @Param("status") ChargingPileStatus status,
                                                @Param("keyword") String keyword,
                                                Pageable pageable);
+
+    Long countByStatus(ChargingPileStatus status);
 }

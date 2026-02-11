@@ -56,6 +56,12 @@ const router = createRouter({
       name: 'user-management-list',
       component: () => import('../views/admin/UserManagementList.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/statistics',
+      name: 'statistics-dashboard',
+      component: () => import('../views/admin/StatisticsDashboard.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ],
 })
