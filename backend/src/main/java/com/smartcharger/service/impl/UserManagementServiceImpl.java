@@ -491,9 +491,9 @@ public class UserManagementServiceImpl implements UserManagementService {
                 .chargingPileId(reservation.getChargingPileId())
                 .chargingPileCode(chargingPileCode)
                 .chargingPileLocation(chargingPileLocation)
-                .reservationTime(reservation.getReservationTime())
-                .expirationTime(reservation.getEndTime())
-                .status(reservation.getStatus().name())
+                .startTime(reservation.getStartTime())
+                .endTime(reservation.getEndTime())
+                .status(reservation.getStatus())
                 .createdTime(reservation.getCreatedTime())
                 .build();
     }

@@ -35,6 +35,9 @@ public class WarningNotice {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "overtime_minutes")
+    private Integer overtimeMinutes;
+
     @Column(name = "is_read", nullable = false)
     private Integer isRead = 0;
 

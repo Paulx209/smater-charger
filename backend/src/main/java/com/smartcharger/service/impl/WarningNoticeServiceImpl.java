@@ -185,6 +185,7 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
         notice.setChargingRecordId(chargingRecordId);
         notice.setType(WarningNoticeType.OVERTIME_WARNING);
         notice.setContent(content);
+        notice.setOvertimeMinutes(duration);
         notice.setIsRead(0);
         notice.setSendStatus(SendStatus.PENDING);
         notice.setCreatedTime(LocalDateTime.now());

@@ -50,7 +50,7 @@ public class VehicleController {
     /**
      * 获取车辆详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public Result<VehicleResponse> getVehicleById(@PathVariable Long id) {
         Long userId = getCurrentUserId();
         VehicleResponse response = vehicleService.getVehicleById(userId, id);
@@ -60,7 +60,7 @@ public class VehicleController {
     /**
      * 更新车辆信息
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public Result<VehicleResponse> updateVehicle(@PathVariable Long id,
                                                   @Valid @RequestBody VehicleUpdateRequest request) {
         Long userId = getCurrentUserId();
@@ -71,7 +71,7 @@ public class VehicleController {
     /**
      * 删除车辆
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public Result<Void> deleteVehicle(@PathVariable Long id) {
         Long userId = getCurrentUserId();
         vehicleService.deleteVehicle(userId, id);
@@ -81,7 +81,7 @@ public class VehicleController {
     /**
      * 设置默认车辆
      */
-    @PutMapping("/{id}/default")
+    @PutMapping("/{id:\\d+}/default")
     public Result<Void> setDefaultVehicle(@PathVariable Long id) {
         Long userId = getCurrentUserId();
         vehicleService.setDefaultVehicle(userId, id);

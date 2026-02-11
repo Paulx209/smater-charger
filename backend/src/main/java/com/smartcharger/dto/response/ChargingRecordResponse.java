@@ -35,6 +35,16 @@ public class ChargingRecordResponse {
     private Long chargingPileId;
 
     /**
+     * 充电桩编码
+     */
+    private String chargingPileCode;
+
+    /**
+     * 充电桩位置
+     */
+    private String chargingPileLocation;
+
+    /**
      * 充电桩名称
      */
     private String pileName;
@@ -89,7 +99,7 @@ public class ChargingRecordResponse {
     /**
      * 状态
      */
-    private ChargingRecordStatus status;
+    private String status;
 
     /**
      * 状态描述

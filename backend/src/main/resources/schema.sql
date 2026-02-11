@@ -148,6 +148,7 @@ CREATE TABLE `warning_notice` (
     `charging_record_id` BIGINT DEFAULT NULL COMMENT '充电记录ID',
     `type` VARCHAR(50) NOT NULL COMMENT '通知类型（IDLE_REMINDER-空闲提醒, OVERTIME_WARNING-超时占位预警, FAULT_NOTICE-故障通知, RESERVATION_REMINDER-预约提醒）',
     `content` TEXT NOT NULL COMMENT '通知内容',
+    `overtime_minutes` INT DEFAULT NULL COMMENT '超时分钟数',
     `is_read` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已读（0-未读, 1-已读）',
     `send_status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '发送状态（PENDING-待发送, SENT-已发送, FAILED-发送失败）',
     `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -198,13 +199,15 @@ CREATE TABLE `fault_report` (
 -- 13. 系统配置表
 CREATE TABLE `system_config` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` BIGINT DEFAULT NULL COMMENT '用户ID（NULL表示全局配置）',
     `config_key` VARCHAR(100) NOT NULL COMMENT '配置键',
     `config_value` VARCHAR(500) DEFAULT NULL COMMENT '配置值',
     `description` VARCHAR(255) DEFAULT NULL COMMENT '配置描述',
     `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_config_key` (`config_key`)
+    UNIQUE KEY `idx_user_config` (`user_id`, `config_key`),
+    CONSTRAINT `fk_system_config_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
 -- 14. 费用配置表

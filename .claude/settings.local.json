@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(npx @fission-ai/openspec list:*)",
+      "mcp__ace-tool__search_context",
+      "Bash(C:/Users/Paul/.claude/bin/codeagent-wrapper.exe --backend codex - \"$PWD\" <<'EOF'\nReview the validation changes:\n\nFILES MODIFIED:\n1. backend/src/main/java/com/smartcharger/controller/ChargingRecordController.java\n   - Added @Validated annotation\n   - Added @Min\\(1\\) to page parameters  \n   - Added @Min\\(1\\) @Max\\(100\\) to size parameters\n\n2. backend/src/main/java/com/smartcharger/common/exception/GlobalExceptionHandler.java\n   - Added ConstraintViolationException handler\n\nREVIEW FOCUS:\n- Correctness: Will validation work as expected?\n- Security: Any edge cases not handled?\n- Spec compliance: Satisfies tasks 3.1-3.3?\n\nOUTPUT: JSON format with findings\nEOF)"
+    ]
+  }
+}

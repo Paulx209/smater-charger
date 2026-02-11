@@ -1,23 +1,78 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { isAuthenticated } from '@/utils/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView,
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/Login.vue'),
+      meta: { requiresAuth: false }
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/',
+      name: 'home',
+      redirect: '/price-config'
     },
+    {
+      path: '/price-config',
+      name: 'price-config-list',
+      component: () => import('../views/admin/PriceConfigList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/price-config/add',
+      name: 'price-config-add',
+      component: () => import('../views/admin/PriceConfigForm.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/price-config/:id/edit',
+      name: 'price-config-edit',
+      component: () => import('../views/admin/PriceConfigForm.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/announcement',
+      name: 'announcement-list',
+      component: () => import('../views/admin/AnnouncementList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/announcement/create',
+      name: 'announcement-create',
+      component: () => import('../views/admin/AnnouncementForm.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/announcement/edit/:id',
+      name: 'announcement-edit',
+      component: () => import('../views/admin/AnnouncementForm.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/users',
+      name: 'user-management-list',
+      component: () => import('../views/admin/UserManagementList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    }
   ],
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const hasToken = isAuthenticated()
+
+  if (to.meta.requiresAuth && !hasToken) {
+    // 需要登录但未登录，跳转到登录页
+    next('/login')
+  } else if (to.path === '/login' && hasToken) {
+    // 已登录访问登录页，跳转到首页
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

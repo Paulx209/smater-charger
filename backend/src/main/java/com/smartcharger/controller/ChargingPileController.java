@@ -2,41 +2,28 @@ package com.smartcharger.controller;
 
 import com.smartcharger.common.result.Result;
 import com.smartcharger.dto.request.*;
-import com.smartcharger.dto.response.BatchDeleteResultResponse;
 import com.smartcharger.dto.response.ChargingPileResponse;
-import com.smartcharger.dto.response.ImportResultResponse;
-import com.smartcharger.entity.enums.ChargingPileStatus;
-import com.smartcharger.entity.enums.ChargingPileType;
-import com.smartcharger.service.ChargingPileAdminService;
 import com.smartcharger.service.ChargingPileService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 充电桩控制器
+ * 充电桩控制器（车主端）
  */
 @Slf4j
 @RestController
-@RequestMapping("/charging-pile")
+@RequestMapping("/charging-piles")
 @RequiredArgsConstructor
 public class ChargingPileController {
 
     private final ChargingPileService chargingPileService;
-    private final ChargingPileAdminService chargingPileAdminService;
-
-    // ==================== 车主端接口 ====================
 
     /**
      * 查询充电桩列表（分页）
@@ -77,107 +64,5 @@ public class ChargingPileController {
 
         List<ChargingPileResponse> list = chargingPileService.getNearbyChargingPiles(request);
         return Result.success(list);
-    }
-
-    // ==================== 管理端接口 ====================
-
-    /**
-     * 添加充电桩（管理端）
-     */
-    @PostMapping("/admin")
-    public Result<ChargingPileResponse> createChargingPile(@Valid @RequestBody ChargingPileCreateRequest request) {
-        ChargingPileResponse response = chargingPileAdminService.createChargingPile(request);
-        return Result.success(response);
-    }
-
-    /**
-     * 更新充电桩信息（管理端）
-     */
-    @PutMapping("/admin/{id:\\d+}")
-    public Result<ChargingPileResponse> updateChargingPile(@PathVariable Long id,
-                                                             @Valid @RequestBody ChargingPileUpdateRequest request) {
-        ChargingPileResponse response = chargingPileAdminService.updateChargingPile(id, request);
-        return Result.success(response);
-    }
-
-    /**
-     * 删除充电桩（管理端）
-     */
-    @DeleteMapping("/admin/{id:\\d+}")
-    public Result<Void> deleteChargingPile(@PathVariable Long id) {
-        chargingPileAdminService.deleteChargingPile(id);
-        return Result.success(null);
-    }
-
-    /**
-     * 查询充电桩列表（管理端）
-     */
-    @GetMapping("/admin")
-    public Result<Page<ChargingPileResponse>> getAdminChargingPileList(
-            @RequestParam(required = false) ChargingPileType type,
-            @RequestParam(required = false) ChargingPileStatus status,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
-        Page<ChargingPileResponse> result = chargingPileAdminService.getAdminChargingPileList(
-                type, status, keyword, page, size);
-        return Result.success(result);
-    }
-
-    /**
-     * 查询充电桩详情（管理端）
-     */
-    @GetMapping("/admin/{id:\\d+}")
-    public Result<ChargingPileResponse> getAdminChargingPileDetail(@PathVariable Long id) {
-        ChargingPileResponse response = chargingPileAdminService.getAdminChargingPileDetail(id);
-        return Result.success(response);
-    }
-
-    /**
-     * 手动更新充电桩状态（管理端）
-     */
-    @PutMapping("/admin/{id:\\d+}/status")
-    public Result<ChargingPileResponse> updateChargingPileStatus(@PathVariable Long id,
-                                                                   @Valid @RequestBody ChargingPileStatusUpdateRequest request) {
-        ChargingPileResponse response = chargingPileAdminService.updateChargingPileStatus(id, request);
-        return Result.success(response);
-    }
-
-    /**
-     * 批量删除充电桩（管理端）
-     */
-    @DeleteMapping("/admin/batch")
-    public Result<BatchDeleteResultResponse> batchDeleteChargingPiles(@Valid @RequestBody ChargingPileBatchDeleteRequest request) {
-        BatchDeleteResultResponse response = chargingPileAdminService.batchDeleteChargingPiles(request);
-        return Result.success(response);
-    }
-
-    /**
-     * 批量导入充电桩（管理端）
-     */
-    @PostMapping("/admin/import")
-    public Result<ImportResultResponse> importChargingPiles(@RequestParam("file") MultipartFile file) throws IOException {
-        ImportResultResponse response = chargingPileAdminService.importChargingPiles(file);
-        return Result.success(response);
-    }
-
-    /**
-     * 批量导出充电桩（管理端）
-     */
-    @GetMapping("/admin/export")
-    public void exportChargingPiles(
-            @RequestParam(required = false) ChargingPileType type,
-            @RequestParam(required = false) ChargingPileStatus status,
-            HttpServletResponse response) throws IOException {
-        Workbook workbook = chargingPileAdminService.exportChargingPiles(type, status);
-
-        // 设置响应头
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition",
-                "attachment; filename=charging_piles_" + LocalDate.now() + ".xlsx");
-
-        // 写入响应流
-        workbook.write(response.getOutputStream());
-        workbook.close();
     }
 }
