@@ -1,4 +1,4 @@
-﻿# 项目模块基线识别 Spec
+# 项目模块基线识别 Spec
 
 ## 目的
 
@@ -45,7 +45,7 @@
 | 预约管理 | 已实现 | 部分实现 | 已实现 | 基本闭环 |
 | 充电桩管理 | 已实现 | 已实现 | 已实现 | 已闭环 |
 | 充电记录 | 已实现 | 部分实现 | 已实现 | 车主侧闭环，管理侧缺口 |
-| 系统公告 | 已实现 | 部分实现 | 部分实现 | 契约待校正 |
+| 系统公告 | 已实现 | 已实现 | 已实现 | 已闭环 |
 | 费用配置 | 已实现 | 已实现 | 部分实现 | 基本闭环，但结构待收敛 |
 | 故障报修 | 已实现 | 未实现 | 部分实现 | 未闭环 |
 | 预警通知 | 已实现 | 未实现 | 已实现 | 车主侧闭环，管理侧缺口 |
@@ -75,16 +75,15 @@
 - 部分前端接口契约与后端真实路径不一致
 - 管理端能力有一部分被混放在车主端工程中
 
-### 3. 系统公告模块存在明确契约问题
+### 3. 系统公告模块的契约问题已完成校正
 
-两端前端的 `announcement` API 文件都把请求路径写成了 `/api/announcement...`，而 Axios 的 `baseURL` 已经配置为 `/api`。
+`announcement-contract-alignment` 已完成以下收敛：
 
-这意味着请求实际会变成：
+- `frontend-admin` 与 `frontend-client` 的公告 API 路径已改为资源路径，不再重复拼接 `/api`
+- `frontend-client` 中混入的 `/admin/announcement` 路由与页面已移除
+- 管理公告能力重新收敛到 `frontend-admin`
 
-- `/api/api/announcement`
-- `/api/api/announcement/admin/...`
-
-因此该模块虽然页面和 store 已存在，但不应直接判定为已闭环。
+当前剩余工作不在公告契约本身，而在项目范围内已有的存量类型错误和后续运行时联调。
 
 ### 4. 故障报修模块存在明确契约错位
 
@@ -137,21 +136,7 @@
 
 ## 推荐的下一步 change
 
-### 推荐 1：`announcement-contract-alignment`
-
-范围：
-
-- 修正公告模块前端 API 路径
-- 验证管理端公告页与车主端公告页
-- 清理车主端中混入的管理公告能力
-
-原因：
-
-- 问题确定
-- 作用范围小
-- 修复收益直接
-
-### 推荐 2：`fault-report-contract-alignment`
+### 推荐 1：`fault-report-contract-alignment`
 
 范围：
 
@@ -162,7 +147,7 @@
 
 - 当前不是纯 UI 缺口，而是链路实际不通
 
-### 推荐 3：`admin-charging-record-console`
+### 推荐 2：`admin-charging-record-console`
 
 范围：
 

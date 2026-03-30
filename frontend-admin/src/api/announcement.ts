@@ -18,7 +18,7 @@ import type {
 // 创建公告
 export const createAnnouncement = (data: AnnouncementCreateRequest) => {
   return request<AnnouncementInfo>({
-    url: '/api/announcement/admin',
+    url: '/announcement/admin',
     method: 'post',
     data
   })
@@ -27,7 +27,7 @@ export const createAnnouncement = (data: AnnouncementCreateRequest) => {
 // 更新公告
 export const updateAnnouncement = (id: number, data: AnnouncementUpdateRequest) => {
   return request<AnnouncementInfo>({
-    url: `/api/announcement/admin/${id}`,
+    url: `/announcement/admin/${id}`,
     method: 'put',
     data
   })
@@ -36,7 +36,7 @@ export const updateAnnouncement = (id: number, data: AnnouncementUpdateRequest) 
 // 删除公告
 export const deleteAnnouncement = (id: number) => {
   return request<void>({
-    url: `/api/announcement/admin/${id}`,
+    url: `/announcement/admin/${id}`,
     method: 'delete'
   })
 }
@@ -44,7 +44,7 @@ export const deleteAnnouncement = (id: number) => {
 // 发布公告
 export const publishAnnouncement = (id: number) => {
   return request<AnnouncementInfo>({
-    url: `/api/announcement/admin/${id}/publish`,
+    url: `/announcement/admin/${id}/publish`,
     method: 'put'
   })
 }
@@ -52,7 +52,7 @@ export const publishAnnouncement = (id: number) => {
 // 下线公告
 export const unpublishAnnouncement = (id: number) => {
   return request<AnnouncementInfo>({
-    url: `/api/announcement/admin/${id}/unpublish`,
+    url: `/announcement/admin/${id}/unpublish`,
     method: 'put'
   })
 }
@@ -60,7 +60,7 @@ export const unpublishAnnouncement = (id: number) => {
 // 查询公告列表（管理端）
 export const getAdminAnnouncementList = (params?: AnnouncementQueryParams) => {
   return request<AnnouncementListResponse>({
-    url: '/api/announcement/admin',
+    url: '/announcement/admin',
     method: 'get',
     params
   })
@@ -69,7 +69,7 @@ export const getAdminAnnouncementList = (params?: AnnouncementQueryParams) => {
 // 查询公告详情（管理端）
 export const getAdminAnnouncementDetail = (id: number) => {
   return request<AnnouncementInfo>({
-    url: `/api/announcement/admin/${id}`,
+    url: `/announcement/admin/${id}`,
     method: 'get'
   })
 }
@@ -79,7 +79,7 @@ export const getAdminAnnouncementDetail = (id: number) => {
 // 查询公告列表（车主端）
 export const getAnnouncementList = (params?: { page?: number; size?: number }) => {
   return request<AnnouncementClientListResponse>({
-    url: '/api/announcement',
+    url: '/announcement',
     method: 'get',
     params
   })
@@ -88,7 +88,7 @@ export const getAnnouncementList = (params?: { page?: number; size?: number }) =
 // 查询公告详情（车主端）
 export const getAnnouncementDetail = (id: number) => {
   return request<AnnouncementClientInfo>({
-    url: `/api/announcement/${id}`,
+    url: `/announcement/${id}`,
     method: 'get'
   })
 }
@@ -96,7 +96,7 @@ export const getAnnouncementDetail = (id: number) => {
 // 查询最新公告（车主端）
 export const getLatestAnnouncements = (limit: number = 3) => {
   return request<AnnouncementClientInfo[]>({
-    url: '/api/announcement/latest',
+    url: '/announcement/latest',
     method: 'get',
     params: { limit }
   })

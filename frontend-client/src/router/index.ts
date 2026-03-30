@@ -154,24 +154,6 @@ const router = createRouter({
       name: 'announcement-detail',
       component: () => import('../views/AnnouncementDetail.vue'),
       meta: { requiresAuth: true }
-    },
-    {
-      path: '/admin/announcement',
-      name: 'admin-announcement-list',
-      component: () => import('../views/admin/AnnouncementList.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/announcement/create',
-      name: 'admin-announcement-create',
-      component: () => import('../views/admin/AnnouncementForm.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/announcement/edit/:id',
-      name: 'admin-announcement-edit',
-      component: () => import('../views/admin/AnnouncementForm.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ],
 })
