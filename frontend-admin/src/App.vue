@@ -20,16 +20,19 @@ const handleLogout = async () => {
   <div class="app-container">
     <header v-if="isLoggedIn" class="app-header">
       <div class="header-content">
-        <div class="logo">智能充电桩管理系统 - 管理端</div>
+        <div class="logo">智能充电管理后台</div>
         <nav class="nav">
-          <RouterLink to="/price-config">费用配置</RouterLink>
-          <RouterLink to="/announcement">系统公告</RouterLink>
+          <RouterLink to="/price-config">价格配置</RouterLink>
+          <RouterLink to="/charging-records">充电记录</RouterLink>
+          <RouterLink to="/users">用户管理</RouterLink>
           <RouterLink to="/fault-reports">故障报修</RouterLink>
+          <RouterLink to="/announcement">公告管理</RouterLink>
+          <RouterLink to="/statistics">统计看板</RouterLink>
         </nav>
         <div class="header-right">
           <div class="user-info">
             <span class="username">{{ userInfo?.nickname || userInfo?.username }}</span>
-            <el-button type="danger" size="small" @click="handleLogout">退出</el-button>
+            <el-button type="danger" size="small" @click="handleLogout">退出登录</el-button>
           </div>
         </div>
       </div>
@@ -57,28 +60,31 @@ const handleLogout = async () => {
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
-  height: 60px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .logo {
   font-size: 20px;
   font-weight: 600;
   color: #409eff;
+  white-space: nowrap;
 }
 
 .nav {
   display: flex;
-  gap: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .nav a {
-  padding: 8px 16px;
+  padding: 8px 14px;
   color: #333;
   text-decoration: none;
   border-radius: 4px;
@@ -109,6 +115,7 @@ const handleLogout = async () => {
 .username {
   font-size: 14px;
   color: #666;
+  white-space: nowrap;
 }
 
 .app-main {

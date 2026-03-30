@@ -32,7 +32,7 @@ public class ChargingRecordController {
     private final ChargingRecordService chargingRecordService;
 
     /**
-     * 开始充电
+     * 寮€濮嬪厖鐢?
      */
     @PostMapping("/start")
     public Result<ChargingRecordResponse> startCharging(@Valid @RequestBody ChargingRecordStartRequest request) {
@@ -42,7 +42,7 @@ public class ChargingRecordController {
     }
 
     /**
-     * 结束充电
+     * 缁撴潫鍏呯數
      */
     @PostMapping("/end/{id:\\d+}")
     public Result<ChargingRecordResponse> endCharging(@PathVariable Long id,
@@ -66,7 +66,7 @@ public class ChargingRecordController {
     }
 
     /**
-     * 查询充电记录详情
+     * 鏌ヨ鍏呯數璁板綍璇︽儏
      */
     @GetMapping("/{id:\\d+}")
     public Result<ChargingRecordResponse> getChargingRecordDetail(@PathVariable Long id) {
@@ -76,7 +76,7 @@ public class ChargingRecordController {
     }
 
     /**
-     * 查询当前充电记录
+     * 鏌ヨ褰撳墠鍏呯數璁板綍
      */
     @GetMapping("/current")
     public Result<ChargingRecordResponse> getCurrentChargingRecord() {
@@ -86,7 +86,7 @@ public class ChargingRecordController {
     }
 
     /**
-     * 月度统计
+     * 鏈堝害缁熻
      */
     @GetMapping("/statistics/monthly")
     public Result<ChargingStatisticsMonthlyResponse> getMonthlyStatistics(
@@ -98,12 +98,18 @@ public class ChargingRecordController {
     }
 
     /**
-     * 年度统计
+     * 骞村害缁熻
      */
     @GetMapping("/statistics/yearly")
     public Result<ChargingStatisticsYearlyResponse> getYearlyStatistics(@RequestParam Integer year) {
         Long userId = getCurrentUserId();
         ChargingStatisticsYearlyResponse response = chargingRecordService.getYearlyStatistics(userId, year);
+        return Result.success(response);
+    }
+
+    @GetMapping("/admin/{id:\\d+}")
+    public Result<ChargingRecordResponse> getAdminChargingRecordDetail(@PathVariable Long id) {
+        ChargingRecordResponse response = chargingRecordService.getAdminChargingRecordDetail(id);
         return Result.success(response);
     }
 
@@ -122,7 +128,7 @@ public class ChargingRecordController {
     }
 
     /**
-     * 获取当前用户ID
+     * 鑾峰彇褰撳墠鐢ㄦ埛ID
      */
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

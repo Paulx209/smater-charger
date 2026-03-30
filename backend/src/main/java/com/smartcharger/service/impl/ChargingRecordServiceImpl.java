@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * 充电记录服务实现类
+ * 鍏呯數璁板綍鏈嶅姟瀹炵幇绫?
  */
 @Slf4j
 @Service
@@ -118,33 +118,33 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     @Override
     @Transactional
     public ChargingRecordResponse endCharging(Long userId, Long recordId, ChargingRecordEndRequest request) {
-        // 1. 验证充电记录是否存在
+        // 1. 楠岃瘉鍏呯數璁板綍鏄惁瀛樺湪
         ChargingRecord chargingRecord = chargingRecordRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
 
-        // 2. 验证充电记录是否属于当前用户
+        // 2. 楠岃瘉鍏呯數璁板綍鏄惁灞炰簬褰撳墠鐢ㄦ埛
         if (!chargingRecord.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 3. 验证充电记录状态是否为"充电中"
+        // 3. 楠岃瘉鍏呯數璁板綍鐘舵€佹槸鍚︿负"鍏呯數涓?
         if (chargingRecord.getStatus() != ChargingRecordStatus.CHARGING) {
             throw new BusinessException(ResultCode.CHARGING_RECORD_NOT_CHARGING);
         }
 
-        // 4. 记录结束时间
+        // 4. 璁板綍缁撴潫鏃堕棿
         LocalDateTime endTime = LocalDateTime.now();
         chargingRecord.setEndTime(endTime);
 
-        // 5. 计算充电时长（分钟）
+        // 5. 璁＄畻鍏呯數鏃堕暱锛堝垎閽燂級
         Duration duration = Duration.between(chargingRecord.getStartTime(), endTime);
         int durationMinutes = (int) duration.toMinutes();
         chargingRecord.setDuration(durationMinutes);
 
-        // 6. 记录充电量
+        // 6. 璁板綍鍏呯數閲?
         chargingRecord.setElectricQuantity(request.getElectricQuantity());
 
-        // 7. 获取充电桩信息并计算费用
+        // 7. 鑾峰彇鍏呯數妗╀俊鎭苟璁＄畻璐圭敤
         ChargingPile chargingPile = chargingPileRepository.findById(chargingRecord.getChargingPileId())
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
@@ -154,15 +154,15 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         );
         chargingRecord.setFee(fee);
 
-        // 8. 更新充电记录状态为"已完成"
+        // 8. 鏇存柊鍏呯數璁板綍鐘舵€佷负"宸插畬鎴?
         chargingRecord.setStatus(ChargingRecordStatus.COMPLETED);
         chargingRecord = chargingRecordRepository.save(chargingRecord);
 
-        // 9. 更新充电桩状态为"空闲"
+        // 9. 鏇存柊鍏呯數妗╃姸鎬佷负"绌洪棽"
         chargingPile.setStatus(ChargingPileStatus.IDLE);
         chargingPileRepository.save(chargingPile);
 
-        log.info("结束充电成功: userId={}, recordId={}, duration={}min, quantity={}, fee={}",
+        log.info("缁撴潫鍏呯數鎴愬姛: userId={}, recordId={}, duration={}min, quantity={}, fee={}",
                 userId, recordId, durationMinutes, request.getElectricQuantity(), fee);
 
         return convertToResponse(chargingRecord, chargingPile, null);
@@ -242,7 +242,45 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                         .build();
                 response.setFeeBreakdown(breakdown);
             } catch (Exception e) {
-                log.warn("获取费用配置失败: {}", e.getMessage());
+                log.warn("鑾峰彇璐圭敤閰嶇疆澶辫触: {}", e.getMessage());
+            }
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ChargingRecordResponse getAdminChargingRecordDetail(Long recordId) {
+        ChargingRecord chargingRecord = chargingRecordRepository.findById(recordId)
+                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
+
+        ChargingPile pile = chargingPileRepository.findById(chargingRecord.getChargingPileId()).orElse(null);
+        Vehicle vehicle = chargingRecord.getVehicleId() != null ?
+                vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null) : null;
+
+        ChargingRecordResponse response = convertToResponse(chargingRecord, pile, vehicle);
+
+        if (chargingRecord.getStatus() == ChargingRecordStatus.COMPLETED && pile != null) {
+            try {
+                var priceConfig = priceConfigService.getCurrentPriceConfig(pile.getType().name());
+                response.setPricePerKwh(priceConfig.getPricePerKwh());
+                response.setServiceFee(priceConfig.getServiceFee());
+
+                BigDecimal electricityFee = chargingRecord.getElectricQuantity()
+                        .multiply(priceConfig.getPricePerKwh())
+                        .setScale(2, RoundingMode.HALF_UP);
+                BigDecimal serviceFeeTotal = chargingRecord.getElectricQuantity()
+                        .multiply(priceConfig.getServiceFee())
+                        .setScale(2, RoundingMode.HALF_UP);
+
+                ChargingRecordResponse.FeeBreakdown breakdown = ChargingRecordResponse.FeeBreakdown.builder()
+                        .electricityFee(electricityFee)
+                        .serviceFee(serviceFeeTotal)
+                        .build();
+                response.setFeeBreakdown(breakdown);
+            } catch (Exception e) {
+                log.warn("Failed to calculate admin charging record fee breakdown: {}", e.getMessage());
             }
         }
 
@@ -268,10 +306,10 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
     @Override
     public ChargingStatisticsMonthlyResponse getMonthlyStatistics(Long userId, Integer year, Integer month) {
-        // 查询指定年月的已完成充电记录
+        // 鏌ヨ鎸囧畾骞存湀鐨勫凡瀹屾垚鍏呯數璁板綍
         List<ChargingRecord> records = chargingRecordRepository.findCompletedRecordsByMonth(userId, year, month);
 
-        // 统计总数据
+        // 缁熻鎬绘暟鎹?
         int totalCount = records.size();
         BigDecimal totalElectricQuantity = records.stream()
                 .map(ChargingRecord::getElectricQuantity)
@@ -282,7 +320,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 按日期分组统计
+        // 鎸夋棩鏈熷垎缁勭粺璁?
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Map<String, List<ChargingRecord>> groupedByDate = records.stream()
                 .collect(Collectors.groupingBy(r -> r.getStartTime().format(dateFormatter)));
@@ -324,10 +362,10 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
     @Override
     public ChargingStatisticsYearlyResponse getYearlyStatistics(Long userId, Integer year) {
-        // 查询指定年份的已完成充电记录
+        // 鏌ヨ鎸囧畾骞翠唤鐨勫凡瀹屾垚鍏呯數璁板綍
         List<ChargingRecord> records = chargingRecordRepository.findCompletedRecordsByYear(userId, year);
 
-        // 统计总数据
+        // 缁熻鎬绘暟鎹?
         int totalCount = records.size();
         BigDecimal totalElectricQuantity = records.stream()
                 .map(ChargingRecord::getElectricQuantity)
@@ -338,7 +376,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 按月份分组统计
+        // 鎸夋湀浠藉垎缁勭粺璁?
         Map<Integer, List<ChargingRecord>> groupedByMonth = records.stream()
                 .collect(Collectors.groupingBy(r -> r.getStartTime().getMonthValue()));
 
@@ -441,7 +479,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     }
 
     /**
-     * 转换为响应DTO
+     * 杞崲涓哄搷搴擠TO
      */
     private ChargingRecordResponse convertToResponse(ChargingRecord record, ChargingPile pile, Vehicle vehicle) {
         return ChargingRecordResponse.builder()

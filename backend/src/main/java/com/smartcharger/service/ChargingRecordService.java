@@ -11,49 +11,57 @@ import org.springframework.data.domain.Page;
 import java.time.LocalDate;
 
 /**
- * 充电记录服务接口
+ * 鍏呯數璁板綍鏈嶅姟鎺ュ彛
  */
 public interface ChargingRecordService {
 
     /**
-     * 开始充电
+     * 寮€濮嬪厖鐢?
      */
     ChargingRecordResponse startCharging(Long userId, ChargingRecordStartRequest request);
 
     /**
-     * 结束充电
+     * 缁撴潫鍏呯數
      */
     ChargingRecordResponse endCharging(Long userId, Long recordId, ChargingRecordEndRequest request);
 
     /**
-     * 查询充电记录列表
+     * 鏌ヨ鍏呯數璁板綍鍒楄〃
      */
     Page<ChargingRecordResponse> getChargingRecordList(Long userId, ChargingRecordStatus status,
                                                          LocalDate startDate, LocalDate endDate,
                                                          Integer page, Integer size);
 
     /**
-     * 查询充电记录详情
+     * 鏌ヨ鍏呯數璁板綍璇︽儏
      */
     ChargingRecordResponse getChargingRecordDetail(Long userId, Long recordId);
 
     /**
-     * 查询当前充电记录
+     * 鏌ヨ褰撳墠鍏呯數璁板綍
+     */
+    /**
+     * Admin detail lookup for a charging record.
+     */
+    ChargingRecordResponse getAdminChargingRecordDetail(Long recordId);
+
+    /**
+     * éŒãƒ¨î‡—è¤°æ’³å¢ éå‘¯æ•¸ç’æ¿ç¶
      */
     ChargingRecordResponse getCurrentChargingRecord(Long userId);
 
     /**
-     * 月度统计
+     * 鏈堝害缁熻
      */
     ChargingStatisticsMonthlyResponse getMonthlyStatistics(Long userId, Integer year, Integer month);
 
     /**
-     * 年度统计
+     * 骞村害缁熻
      */
     ChargingStatisticsYearlyResponse getYearlyStatistics(Long userId, Integer year);
 
     /**
-     * 管理端：查询所有充电记录
+     * 绠＄悊绔細鏌ヨ鎵€鏈夊厖鐢佃褰?
      */
     Page<ChargingRecordResponse> getAllChargingRecords(Long userId, Long chargingPileId,
                                                          ChargingRecordStatus status,
