@@ -140,3 +140,13 @@
 - Validation note:
   - mvn -q -DskipTests compile in backend passed
   - npm.cmd run type-check in frontend-admin still reports historical errors in announcement, statistics, and user-management slices, but the new charging-record admin module did not add new TypeScript failures
+## 2026-03-30 User Management Contract Alignment Update
+
+- Change completed: `user-management-contract-alignment`
+- Scope completed:
+  - aligned admin user list, detail drawer, batch status dialog, and password reset dialog to one primary contract
+  - removed active-path dependence on legacy `types/userManagement.ts` shapes
+  - normalized status update and batch status update payloads to `{ status }` and `{ userIds, status }`
+- Validation result:
+  - user-management-specific `frontend-admin` type-check failures are cleared
+  - remaining `frontend-admin` failures are pre-existing and outside this change

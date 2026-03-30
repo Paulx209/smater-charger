@@ -1,31 +1,23 @@
-/**
- * 用户管理相关类型定义
- */
-
-// 用户状态枚举
 export enum UserStatus {
   DISABLED = 0,
   ENABLED = 1
 }
 
-// 用户状态文本映射
 export const UserStatusText: Record<UserStatus, string> = {
   [UserStatus.DISABLED]: '禁用',
   [UserStatus.ENABLED]: '启用'
 }
 
-// 用户状态颜色映射
 export const UserStatusColor: Record<UserStatus, string> = {
   [UserStatus.DISABLED]: 'danger',
   [UserStatus.ENABLED]: 'success'
 }
 
-// 用户基本信息
 export interface UserInfo {
   id: number
   username: string
-  phone: string
-  nickname: string
+  phone: string | null
+  nickname: string | null
   name: string | null
   avatar: string | null
   warningThreshold: number | null
@@ -34,7 +26,6 @@ export interface UserInfo {
   updatedTime: string
 }
 
-// 用户统计数据
 export interface UserStatistics {
   vehicleCount: number
   chargingRecordCount: number
@@ -49,21 +40,27 @@ export interface UserStatistics {
   lastChargingTime: string | null
 }
 
-// 用户车辆信息
 export interface UserVehicle {
   id: number
   licensePlate: string
   brand: string
   model: string
+  batteryCapacity?: number | null
   isDefault: boolean
+  createdTime?: string
+  updatedTime?: string
 }
 
-// 充电记录信息
 export interface ChargingRecord {
   id: number
+  userId?: number
   chargingPileId: number
   chargingPileCode: string
   chargingPileLocation: string
+  pileName?: string
+  pileLocation?: string
+  pileType?: string
+  vehicleId?: number
   vehicleLicensePlate: string
   startTime: string
   endTime: string | null
@@ -71,48 +68,55 @@ export interface ChargingRecord {
   electricQuantity: number
   fee: number
   status: string
+  statusDesc?: string
+  pricePerKwh?: number
+  serviceFee?: number
   createdTime: string
+  updatedTime?: string | null
 }
 
-// 预约记录信息
 export interface ReservationRecord {
   id: number
+  userId?: number
   chargingPileId: number
   chargingPileCode: string
   chargingPileLocation: string
-  reservationTime: string
-  expirationTime: string
+  chargingPileLng?: number
+  chargingPileLat?: number
+  chargingPileType?: string
+  chargingPileTypeDesc?: string
+  chargingPilePower?: number
+  startTime: string
+  endTime: string
   status: string
+  statusDesc?: string
+  remainingMinutes?: number | null
   createdTime: string
 }
 
-// 违规记录信息
 export interface ViolationRecord {
   id: number
   chargingRecordId: number
   chargingPileCode: string
   chargingPileLocation: string
-  chargingEndTime: string
+  chargingEndTime: string | null
   overtimeMinutes: number
   warningTime: string
   violationType: string
   createdTime: string
 }
 
-// 违规记录汇总
 export interface ViolationSummary {
   totalViolations: number
   totalOvertimeMinutes: number
 }
 
-// 用户管理响应（列表和详情）
 export interface UserAdminResponse extends UserInfo {
   statistics: UserStatistics
   vehicles?: UserVehicle[]
   recentChargingRecords?: ChargingRecord[]
 }
 
-// 用户查询参数
 export interface UserQueryParams {
   status?: UserStatus
   keyword?: string
@@ -123,18 +127,15 @@ export interface UserQueryParams {
   size?: number
 }
 
-// 更新用户状态请求
 export interface UserStatusUpdateRequest {
   status: UserStatus
   reason?: string
 }
 
-// 重置密码请求
 export interface PasswordResetRequest {
   newPassword?: string
 }
 
-// 重置密码响应
 export interface PasswordResetResponse {
   id: number
   username: string
@@ -142,14 +143,12 @@ export interface PasswordResetResponse {
   message: string
 }
 
-// 批量更新状态请求
 export interface BatchStatusUpdateRequest {
   userIds: number[]
   status: UserStatus
   reason?: string
 }
 
-// 批量操作结果
 export interface BatchOperationResult {
   totalCount: number
   successCount: number
@@ -160,7 +159,6 @@ export interface BatchOperationResult {
   }>
 }
 
-// 分页响应
 export interface PageResponse<T> {
   content: T[]
   totalElements: number
@@ -169,9 +167,8 @@ export interface PageResponse<T> {
   number: number
 }
 
-// 违规记录分页响应（包含汇总）
 export interface ViolationPageResponse {
-  summary: ViolationSummary
+  summary?: ViolationSummary
   content: ViolationRecord[]
   totalElements: number
   totalPages: number
@@ -179,28 +176,28 @@ export interface ViolationPageResponse {
   number: number
 }
 
-// 格式化用户状态文本
 export function getUserStatusText(status: UserStatus): string {
   return UserStatusText[status]
 }
 
-// 格式化用户状态颜色
 export function getUserStatusColor(status: UserStatus): string {
   return UserStatusColor[status]
 }
 
-// 格式化金额（保留2位小数）
+export function isUserEnabled(status: UserStatus | number | null | undefined): boolean {
+  return status === UserStatus.ENABLED
+}
+
 export function formatMoney(amount: number): string {
   return `¥${amount.toFixed(2)}`
 }
 
-// 格式化电量（保留2位小数）
 export function formatElectricity(quantity: number): string {
-  return `${quantity.toFixed(2)} 度`
+  return `${quantity.toFixed(2)} kWh`
 }
 
-// 格式化时长（分钟转小时分钟）
-export function formatDuration(minutes: number): string {
+export function formatDuration(minutes: number | null | undefined): string {
+  if (minutes == null) return '-'
   if (minutes < 60) {
     return `${minutes} 分钟`
   }
@@ -209,8 +206,7 @@ export function formatDuration(minutes: number): string {
   return mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`
 }
 
-// 格式化日期时间
-export function formatDateTime(dateTime: string | null): string {
+export function formatDateTime(dateTime: string | null | undefined): string {
   if (!dateTime) return '-'
   const date = new Date(dateTime)
   return date.toLocaleString('zh-CN', {
@@ -223,11 +219,10 @@ export function formatDateTime(dateTime: string | null): string {
   })
 }
 
-// 格式化日期
-export function formatDate(date: string | null): string {
+export function formatDate(date: string | null | undefined): string {
   if (!date) return '-'
-  const d = new Date(date)
-  return d.toLocaleDateString('zh-CN', {
+  const value = new Date(date)
+  return value.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
