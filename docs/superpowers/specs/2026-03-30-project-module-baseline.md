@@ -161,3 +161,14 @@
 - Validation result:
   - announcement-specific `frontend-admin` type-check failures are cleared
   - remaining `frontend-admin` failures are pre-existing and outside this change
+
+## 2026-03-30 Statistics Response Alignment Update
+
+- Change completed: `statistics-response-alignment`
+- Scope completed:
+  - aligned statistics overview requests to direct data models
+  - aligned statistics export to raw blob handling that matches the backend binary response
+  - aligned statistics store to the corrected API contract
+- Validation result:
+  - statistics-specific `frontend-admin` type-check failures are cleared
+  - remaining `frontend-admin` failure is outside this change
