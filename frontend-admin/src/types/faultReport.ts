@@ -37,15 +37,18 @@ export interface FaultReportInfo {
   updatedTime: string
 }
 
-export interface FaultReportCreateRequest {
-  chargingPileId: number
-  description: string
-}
-
 export interface FaultReportQueryParams {
+  chargingPileId?: number
   status?: FaultReportStatus
+  startDate?: string
+  endDate?: string
   page?: number
   size?: number
+}
+
+export interface FaultReportHandleRequest {
+  status: FaultReportStatus
+  handleRemark?: string
 }
 
 export interface FaultReportListResponse {
@@ -56,23 +59,19 @@ export interface FaultReportListResponse {
   number: number
 }
 
-export const formatRelativeTime = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
+export interface FaultStatisticsTopPile {
+  chargingPileId: number
+  pileName: string
+  faultCount: number
+}
 
-  const minute = 60 * 1000
-  const hour = 60 * minute
-  const day = 24 * hour
-  const week = 7 * day
-  const month = 30 * day
-
-  if (diff < minute) return '刚刚'
-  if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
-  if (diff < day) return `${Math.floor(diff / hour)}小时前`
-  if (diff < week) return `${Math.floor(diff / day)}天前`
-  if (diff < month) return `${Math.floor(diff / week)}周前`
-  return date.toLocaleDateString('zh-CN')
+export interface FaultStatisticsResponse {
+  totalCount: number
+  pendingCount: number
+  processingCount: number
+  resolvedCount: number
+  avgHandleTime: number
+  topFaultPiles: FaultStatisticsTopPile[]
 }
 
 export const formatPileType = (pileType?: ChargingPileType): string => {

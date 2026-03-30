@@ -7,32 +7,14 @@
         </div>
       </template>
 
-      <!-- 筛选条件 -->
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm" class="filter-form">
-          <el-form-item label="故障类型">
-            <el-select
-              v-model="filterForm.faultType"
-              placeholder="全部类型"
-              clearable
-              style="width: 180px"
-              @change="handleFilter"
-            >
-              <el-option
-                v-for="(text, type) in FaultTypeText"
-                :key="type"
-                :label="text"
-                :value="type"
-              />
-            </el-select>
-          </el-form-item>
-
           <el-form-item label="处理状态">
             <el-select
               v-model="filterForm.status"
               placeholder="全部状态"
               clearable
-              style="width: 150px"
+              style="width: 160px"
               @change="handleFilter"
             >
               <el-option
@@ -51,7 +33,6 @@
         </el-form>
       </div>
 
-      <!-- 报修列表 -->
       <div v-if="faultReportStore.reports.length === 0 && !faultReportStore.loading" class="empty-state">
         <el-empty description="暂无报修记录" />
       </div>
@@ -63,75 +44,46 @@
           class="report-item"
           @click="handleViewDetail(report.id)"
         >
-          <div class="report-icon">
-            <el-icon :size="24" :color="getReportColor(report.status)">
-              <component :is="getReportIcon(report.faultType)" />
-            </el-icon>
-          </div>
-
-          <div class="report-content">
+          <div class="report-main">
             <div class="report-header">
-              <el-tag :type="FaultTypeColor[report.faultType]" size="small">
-                {{ FaultTypeText[report.faultType] }}
-              </el-tag>
+              <span class="report-id">#{{ report.id }}</span>
               <el-tag :type="FaultReportStatusColor[report.status]" size="small">
                 {{ FaultReportStatusText[report.status] }}
               </el-tag>
-              <span class="report-time">{{ formatRelativeTime(report.reportTime) }}</span>
+              <span class="report-time">{{ formatRelativeTime(report.createdTime) }}</span>
             </div>
 
             <div class="report-pile">
-              <el-icon><Location /></el-icon>
-              <span class="pile-name">{{ report.pileName }}</span>
+              <span class="pile-name">{{ report.pileName || `充电桩 ${report.chargingPileId}` }}</span>
               <span v-if="report.pileLocation" class="pile-location">{{ report.pileLocation }}</span>
             </div>
 
             <div class="report-description">{{ report.description }}</div>
 
-            <div v-if="report.images && report.images.length > 0" class="report-images">
-              <el-image
-                v-for="(image, index) in report.images.slice(0, 3)"
-                :key="index"
-                :src="image"
-                :preview-src-list="report.images"
-                :initial-index="index"
-                fit="cover"
-                class="report-image"
-                @click.stop
-              />
+            <div class="report-meta">
+              <span>创建时间：{{ formatDateTime(report.createdTime) }}</span>
+              <span>更新时间：{{ formatDateTime(report.updatedTime) }}</span>
             </div>
 
-            <div v-if="report.processNote || report.resolveNote" class="report-notes">
-              <div v-if="report.processNote" class="note-item">
-                <strong>处理说明：</strong>{{ report.processNote }}
-              </div>
-              <div v-if="report.resolveNote" class="note-item">
-                <strong>解决说明：</strong>{{ report.resolveNote }}
-              </div>
+            <div v-if="report.handleRemark" class="report-remark">
+              处理备注：{{ report.handleRemark }}
             </div>
           </div>
 
           <div class="report-actions">
-            <el-button
-              type="primary"
-              size="small"
-              @click.stop="handleViewDetail(report.id)"
-            >
-              查看详情
-            </el-button>
+            <el-button type="primary" size="small" @click.stop="handleViewDetail(report.id)">查看详情</el-button>
             <el-button
               v-if="report.status === FaultReportStatus.PENDING"
               type="danger"
               size="small"
               @click.stop="handleDelete(report.id)"
             >
-              删除
+              取消报修
             </el-button>
           </div>
         </div>
       </div>
 
-      <!-- 分页 -->
       <div v-if="faultReportStore.total > 0" class="pagination">
         <el-pagination
           v-model:current-page="faultReportStore.currentPage"
@@ -148,122 +100,79 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import {
-  Warning,
-  Tools,
-  Monitor,
-  Connection,
-  CreditCard,
-  QuestionFilled,
-  Location
-} from '@element-plus/icons-vue'
 import { useFaultReportStore } from '@/stores/faultReport'
 import {
-  FaultType,
-  FaultTypeText,
-  FaultTypeColor,
   FaultReportStatus,
-  FaultReportStatusText,
   FaultReportStatusColor,
+  FaultReportStatusText,
   formatRelativeTime
 } from '@/types/faultReport'
 
 const router = useRouter()
 const faultReportStore = useFaultReportStore()
 
-// 筛选表单
 const filterForm = reactive({
-  faultType: undefined as FaultType | undefined,
   status: undefined as FaultReportStatus | undefined
 })
 
-// 获取报修图标
-const getReportIcon = (type: FaultType) => {
-  const iconMap = {
-    [FaultType.CANNOT_CHARGE]: Warning,
-    [FaultType.SLOW_CHARGING]: Tools,
-    [FaultType.DISPLAY_ERROR]: Monitor,
-    [FaultType.CONNECTOR_DAMAGED]: Connection,
-    [FaultType.PAYMENT_FAILED]: CreditCard,
-    [FaultType.OTHER]: QuestionFilled
-  }
-  return iconMap[type] || QuestionFilled
+const formatDateTime = (dateTime: string) => {
+  const date = new Date(dateTime)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
-// 获取报修颜色
-const getReportColor = (status: FaultReportStatus) => {
-  const colorMap = {
-    [FaultReportStatus.PENDING]: '#909399',
-    [FaultReportStatus.PROCESSING]: '#e6a23c',
-    [FaultReportStatus.RESOLVED]: '#67c23a',
-    [FaultReportStatus.CLOSED]: '#909399'
-  }
-  return colorMap[status] || '#909399'
-}
-
-// 查看详情
 const handleViewDetail = (id: number) => {
   router.push(`/fault-reports/${id}`)
 }
 
-// 删除报修
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要删除这条报修记录吗？',
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await ElMessageBox.confirm('确认取消这条报修记录吗？', '确认取消', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
 
     await faultReportStore.removeReport(id)
   } catch (error) {
-    if (error === 'cancel') {
-      return
-    }
-    console.error('删除报修失败:', error)
+    if (error === 'cancel') return
+    console.error('取消报修失败:', error)
   }
 }
 
-// 筛选
 const handleFilter = async () => {
   try {
-    await faultReportStore.fetchMyReportList({
-      faultType: filterForm.faultType,
-      status: filterForm.status
-    })
+    faultReportStore.currentPage = 1
+    await faultReportStore.fetchMyReportList({ status: filterForm.status })
   } catch (error) {
     console.error('查询失败:', error)
   }
 }
 
-// 重置
 const handleReset = async () => {
-  filterForm.faultType = undefined
   filterForm.status = undefined
   faultReportStore.currentPage = 1
   await handleFilter()
 }
 
-// 分页大小改变
 const handleSizeChange = async (size: number) => {
   faultReportStore.pageSize = size
-  await handleFilter()
+  await faultReportStore.fetchMyReportList({ status: filterForm.status })
 }
 
-// 页码改变
 const handlePageChange = async (page: number) => {
   faultReportStore.currentPage = page
-  await handleFilter()
+  await faultReportStore.fetchMyReportList({ status: filterForm.status })
 }
 
-// 组件挂载时加载数据
 onMounted(async () => {
   await faultReportStore.fetchMyReportList()
 })
@@ -282,8 +191,8 @@ onMounted(async () => {
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-size: 18px;
   font-weight: 600;
 }
@@ -299,124 +208,100 @@ onMounted(async () => {
   margin-bottom: 0;
 }
 
-.empty-state {
-  padding: 60px 0;
-}
-
 .report-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .report-item {
   display: flex;
   gap: 16px;
-  padding: 16px;
-  background-color: #fff;
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
+  justify-content: space-between;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .report-item:hover {
-  background-color: #f5f7fa;
-  border-color: #409eff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
-.report-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background-color: #f5f7fa;
-  border-radius: 50%;
-}
-
-.report-content {
+.report-main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .report-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 12px;
+}
+
+.report-id {
+  font-weight: 600;
+  color: #303133;
 }
 
 .report-time {
+  margin-left: auto;
   font-size: 12px;
   color: #909399;
 }
 
 .report-pile {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #606266;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 
 .pile-name {
   font-weight: 600;
+  color: #303133;
 }
 
 .pile-location {
+  font-size: 13px;
   color: #909399;
 }
 
 .report-description {
-  font-size: 14px;
-  color: #303133;
-  line-height: 1.6;
-}
-
-.report-images {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.report-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.report-notes {
-  margin-top: 8px;
-  padding: 12px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.7;
   color: #606266;
+  white-space: pre-wrap;
 }
 
-.note-item {
-  margin-bottom: 8px;
-  line-height: 1.6;
+.report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #909399;
 }
 
-.note-item:last-child {
-  margin-bottom: 0;
-}
-
-.note-item strong {
-  color: #303133;
+.report-remark {
+  padding: 12px 14px;
+  color: #606266;
+  background-color: #f5f7fa;
+  border-radius: 6px;
 }
 
 .report-actions {
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
+  gap: 10px;
+  justify-content: center;
+}
+
+.empty-state {
+  padding: 48px 0;
 }
 
 .pagination {

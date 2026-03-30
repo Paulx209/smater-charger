@@ -2,41 +2,28 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  createFaultReport,
   getFaultReportList,
   getFaultReportDetail,
-  deleteFaultReport
+  handleFaultReport,
+  getFaultStatistics
 } from '@/api/faultReport'
 import type {
   FaultReportInfo,
-  FaultReportCreateRequest,
-  FaultReportQueryParams
+  FaultReportQueryParams,
+  FaultReportHandleRequest,
+  FaultStatisticsResponse
 } from '@/types/faultReport'
 
-export const useFaultReportStore = defineStore('faultReport', () => {
+export const useFaultReportStore = defineStore('adminFaultReport', () => {
   const loading = ref(false)
   const reports = ref<FaultReportInfo[]>([])
   const currentReport = ref<FaultReportInfo | null>(null)
+  const statistics = ref<FaultStatisticsResponse | null>(null)
   const total = ref(0)
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  const createReport = async (data: FaultReportCreateRequest) => {
-    try {
-      loading.value = true
-      const result = await createFaultReport(data)
-      ElMessage.success('报修提交成功')
-      return result
-    } catch (error) {
-      console.error('创建故障报修失败:', error)
-      ElMessage.error('报修提交失败')
-      throw error
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const fetchMyReportList = async (params?: FaultReportQueryParams) => {
+  const fetchReportList = async (params?: FaultReportQueryParams) => {
     try {
       loading.value = true
       const queryParams = {
@@ -52,7 +39,7 @@ export const useFaultReportStore = defineStore('faultReport', () => {
       return result
     } catch (error) {
       console.error('获取故障报修列表失败:', error)
-      ElMessage.error('获取报修列表失败')
+      ElMessage.error('获取故障报修列表失败')
       throw error
     } finally {
       loading.value = false
@@ -67,26 +54,44 @@ export const useFaultReportStore = defineStore('faultReport', () => {
       return result
     } catch (error) {
       console.error('获取故障报修详情失败:', error)
-      ElMessage.error('获取报修详情失败')
+      ElMessage.error('获取故障报修详情失败')
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  const removeReport = async (id: number) => {
+  const submitHandle = async (id: number, data: FaultReportHandleRequest) => {
     try {
       loading.value = true
-      await deleteFaultReport(id)
-      ElMessage.success('取消报修成功')
-      reports.value = reports.value.filter(report => report.id !== id)
-      total.value = Math.max(total.value - 1, 0)
-      if (currentReport.value?.id === id) {
-        currentReport.value = null
+      const result = await handleFaultReport(id, data)
+      currentReport.value = result
+      const index = reports.value.findIndex(report => report.id === id)
+      if (index !== -1) {
+        reports.value[index] = result
       }
+      ElMessage.success('报修处理已更新')
+      return result
     } catch (error) {
-      console.error('取消故障报修失败:', error)
-      ElMessage.error('取消报修失败')
+      console.error('处理故障报修失败:', error)
+      ElMessage.error('处理故障报修失败')
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchStatistics = async (
+    params?: Pick<FaultReportQueryParams, 'startDate' | 'endDate'>
+  ) => {
+    try {
+      loading.value = true
+      const result = await getFaultStatistics(params)
+      statistics.value = result
+      return result
+    } catch (error) {
+      console.error('获取故障统计失败:', error)
+      ElMessage.error('获取故障统计失败')
       throw error
     } finally {
       loading.value = false
@@ -96,6 +101,7 @@ export const useFaultReportStore = defineStore('faultReport', () => {
   const reset = () => {
     reports.value = []
     currentReport.value = null
+    statistics.value = null
     total.value = 0
     currentPage.value = 1
     pageSize.value = 10
@@ -105,13 +111,14 @@ export const useFaultReportStore = defineStore('faultReport', () => {
     loading,
     reports,
     currentReport,
+    statistics,
     total,
     currentPage,
     pageSize,
-    createReport,
-    fetchMyReportList,
+    fetchReportList,
     fetchReportDetail,
-    removeReport,
+    submitHandle,
+    fetchStatistics,
     reset
   }
 })

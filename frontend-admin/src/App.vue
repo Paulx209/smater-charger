@@ -24,6 +24,7 @@ const handleLogout = async () => {
         <nav class="nav">
           <RouterLink to="/price-config">费用配置</RouterLink>
           <RouterLink to="/announcement">系统公告</RouterLink>
+          <RouterLink to="/fault-reports">故障报修</RouterLink>
         </nav>
         <div class="header-right">
           <div class="user-info">
@@ -48,11 +49,11 @@ const handleLogout = async () => {
 }
 
 .app-header {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .header-content {
@@ -77,9 +78,9 @@ const handleLogout = async () => {
 }
 
 .nav a {
-  text-decoration: none;
-  color: #333;
   padding: 8px 16px;
+  color: #333;
+  text-decoration: none;
   border-radius: 4px;
   transition: all 0.3s;
 }
@@ -106,8 +107,8 @@ const handleLogout = async () => {
 }
 
 .username {
-  color: #666;
   font-size: 14px;
+  color: #666;
 }
 
 .app-main {
