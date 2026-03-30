@@ -4,66 +4,32 @@ import type {
   PriceConfigCreateRequest,
   PriceConfigUpdateRequest,
   PriceConfigQueryParams,
-  PriceConfigListResponse,
-  PriceEstimateRequest,
-  PriceEstimateResponse,
-  ChargingPileType
+  PriceConfigListResponse
 } from '@/types/priceConfig'
 
-/**
- * 创建费用配置
- */
+const ADMIN_PRICE_CONFIG_BASE = '/admin/price-config'
+
 export function createPriceConfig(data: PriceConfigCreateRequest): Promise<PriceConfigInfo> {
-  return request.post('/price-config', data)
+  return request.post(ADMIN_PRICE_CONFIG_BASE, data) as Promise<PriceConfigInfo>
 }
 
-/**
- * 更新费用配置
- */
 export function updatePriceConfig(
   id: number,
   data: PriceConfigUpdateRequest
 ): Promise<PriceConfigInfo> {
-  return request.put(`/price-config/${id}`, data)
+  return request.put(`${ADMIN_PRICE_CONFIG_BASE}/${id}`, data) as Promise<PriceConfigInfo>
 }
 
-/**
- * 删除费用配置
- */
 export function deletePriceConfig(id: number): Promise<void> {
-  return request.delete(`/price-config/${id}`)
+  return request.delete(`${ADMIN_PRICE_CONFIG_BASE}/${id}`) as Promise<void>
 }
 
-/**
- * 查询费用配置列表
- */
 export function getPriceConfigList(
   params?: PriceConfigQueryParams
 ): Promise<PriceConfigListResponse> {
-  return request.get('/price-config', { params })
+  return request.get(ADMIN_PRICE_CONFIG_BASE, { params }) as Promise<PriceConfigListResponse>
 }
 
-/**
- * 查询费用配置详情
- */
 export function getPriceConfigDetail(id: number): Promise<PriceConfigInfo> {
-  return request.get(`/price-config/${id}`)
-}
-
-/**
- * 获取当前有效费用配置
- */
-export function getCurrentPriceConfig(
-  chargingPileType: ChargingPileType
-): Promise<PriceConfigInfo> {
-  return request.get('/price-config/current', {
-    params: { chargingPileType }
-  })
-}
-
-/**
- * 费用预估
- */
-export function estimatePrice(data: PriceEstimateRequest): Promise<PriceEstimateResponse> {
-  return request.post('/price-config/estimate', data)
+  return request.get(`${ADMIN_PRICE_CONFIG_BASE}/${id}`) as Promise<PriceConfigInfo>
 }

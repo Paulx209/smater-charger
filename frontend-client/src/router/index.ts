@@ -84,24 +84,6 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/price-config',
-      name: 'admin-price-config-list',
-      component: () => import('../views/admin/PriceConfigList.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/price-config/add',
-      name: 'admin-price-config-add',
-      component: () => import('../views/admin/PriceConfigForm.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/price-config/:id/edit',
-      name: 'admin-price-config-edit',
-      component: () => import('../views/admin/PriceConfigForm.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
       path: '/charging-record',
       name: 'charging-record-list',
       component: () => import('../views/ChargingRecordList.vue'),

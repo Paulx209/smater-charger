@@ -172,3 +172,12 @@
 - Validation result:
   - statistics-specific `frontend-admin` type-check failures are cleared
   - remaining `frontend-admin` failure is outside this change
+
+## Update 2026-03-30: price-config-boundary-alignment
+
+- backend price-config management now uses `/admin/price-config`
+- backend client reads remain on `/price-config/current` and `/price-config/estimate`
+- `frontend-admin` remains the only price-config management surface
+- `frontend-client` admin price-config routes and pages were removed
+- `frontend-client` price-config store/api now keep only current-price lookup and fee estimation
+- validation note: `backend` compile passed and `frontend-admin` type-check passed; `frontend-client` still has unrelated historical TypeScript failures outside the price-config slice

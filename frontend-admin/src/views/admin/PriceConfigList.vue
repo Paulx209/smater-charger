@@ -189,12 +189,12 @@ const calculateTotal = (pricePerKwh: number, serviceFee: number) => {
 
 // 新增配置
 const handleCreate = () => {
-  router.push('/admin/price-config/add')
+  router.push('/price-config/add')
 }
 
 // 编辑配置
 const handleEdit = (id: number) => {
-  router.push(`/admin/price-config/${id}/edit`)
+  router.push(`/price-config/${id}/edit`)
 }
 
 // 切换激活状态

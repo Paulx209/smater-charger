@@ -155,3 +155,10 @@ If a new conversation starts, the first task should be:
 2. summarize current project state in 1 short pass
 3. confirm the next target module
 4. only then create or update the next OpenSpec change
+## Update 2026-03-30: price-config-boundary-alignment
+
+- completed backend/frontend price-config boundary cleanup
+- backend management endpoints moved to `/admin/price-config`
+- `frontend-admin` remains the only management surface
+- `frontend-client` admin price-config routes and pages were removed
+- `frontend-client` now keeps only current-price lookup and fee estimation

@@ -208,7 +208,7 @@ const formatTotalPrice = () => {
 
 // 返回
 const handleBack = () => {
-  router.push('/admin/price-config')
+  router.push('/price-config')
 }
 
 // 提交表单
@@ -241,7 +241,7 @@ const handleSubmit = async () => {
     }
 
     // 成功后返回列表页
-    router.push('/admin/price-config')
+    router.push('/price-config')
   } catch (error) {
     console.error('提交失败:', error)
   } finally {
@@ -267,7 +267,7 @@ const loadConfigDetail = async () => {
   } catch (error) {
     console.error('加载配置详情失败:', error)
     ElMessage.error('加载配置详情失败')
-    router.push('/admin/price-config')
+    router.push('/price-config')
   } finally {
     loading.value = false
   }

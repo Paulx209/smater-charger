@@ -6,21 +6,16 @@ import {
   updatePriceConfig,
   deletePriceConfig,
   getPriceConfigList,
-  getPriceConfigDetail,
-  getCurrentPriceConfig,
-  estimatePrice
+  getPriceConfigDetail
 } from '@/api/priceConfig'
 import type {
   PriceConfigInfo,
   PriceConfigCreateRequest,
   PriceConfigUpdateRequest,
-  PriceConfigQueryParams,
-  PriceEstimateRequest,
-  ChargingPileType
+  PriceConfigQueryParams
 } from '@/types/priceConfig'
 
 export const usePriceConfigStore = defineStore('priceConfig', () => {
-  // 状态
   const priceConfigs = ref<PriceConfigInfo[]>([])
   const currentPriceConfig = ref<PriceConfigInfo | null>(null)
   const loading = ref(false)
@@ -28,9 +23,6 @@ export const usePriceConfigStore = defineStore('priceConfig', () => {
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  /**
-   * 查询费用配置列表
-   */
   const fetchPriceConfigList = async (params?: PriceConfigQueryParams) => {
     try {
       loading.value = true
@@ -44,17 +36,14 @@ export const usePriceConfigStore = defineStore('priceConfig', () => {
       currentPage.value = response.number + 1
       return response
     } catch (error) {
-      console.error('查询费用配置列表失败:', error)
-      ElMessage.error('查询费用配置列表失败')
+      console.error('Failed to load price config list:', error)
+      ElMessage.error('加载价格配置列表失败')
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 获取费用配置详情
-   */
   const fetchPriceConfigDetail = async (id: number) => {
     try {
       loading.value = true
@@ -62,121 +51,76 @@ export const usePriceConfigStore = defineStore('priceConfig', () => {
       currentPriceConfig.value = data
       return data
     } catch (error) {
-      console.error('获取费用配置详情失败:', error)
-      ElMessage.error('获取费用配置详情失败')
+      console.error('Failed to load price config detail:', error)
+      ElMessage.error('加载价格配置详情失败')
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 创建费用配置
-   */
   const addPriceConfig = async (data: PriceConfigCreateRequest) => {
     try {
       loading.value = true
       const result = await createPriceConfig(data)
-      ElMessage.success('创建成功')
+      ElMessage.success('新增价格配置成功')
       await fetchPriceConfigList()
       return result
     } catch (error) {
-      console.error('创建费用配置失败:', error)
+      console.error('Failed to create price config:', error)
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 更新费用配置
-   */
   const modifyPriceConfig = async (id: number, data: PriceConfigUpdateRequest) => {
     try {
       loading.value = true
       const result = await updatePriceConfig(id, data)
-      ElMessage.success('更新成功')
+      ElMessage.success('更新价格配置成功')
       await fetchPriceConfigList()
       return result
     } catch (error) {
-      console.error('更新费用配置失败:', error)
+      console.error('Failed to update price config:', error)
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 删除费用配置
-   */
   const removePriceConfig = async (id: number) => {
     try {
       loading.value = true
       await deletePriceConfig(id)
-      ElMessage.success('删除成功')
+      ElMessage.success('删除价格配置成功')
       await fetchPriceConfigList()
     } catch (error) {
-      console.error('删除费用配置失败:', error)
+      console.error('Failed to delete price config:', error)
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 切换激活状态
-   */
   const toggleActive = async (id: number, isActive: number) => {
     try {
       loading.value = true
       await updatePriceConfig(id, { isActive })
-      ElMessage.success(isActive === 1 ? '已激活' : '已停用')
+      ElMessage.success(isActive === 1 ? '启用价格配置成功' : '停用价格配置成功')
       await fetchPriceConfigList()
     } catch (error) {
-      console.error('切换激活状态失败:', error)
+      console.error('Failed to toggle price config status:', error)
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * 获取当前有效费用配置
-   */
-  const fetchCurrentPriceConfig = async (chargingPileType: ChargingPileType) => {
-    try {
-      const data = await getCurrentPriceConfig(chargingPileType)
-      return data
-    } catch (error) {
-      console.error('获取当前有效费用配置失败:', error)
-      throw error
-    }
-  }
-
-  /**
-   * 费用预估
-   */
-  const estimateFee = async (data: PriceEstimateRequest) => {
-    try {
-      const result = await estimatePrice(data)
-      return result
-    } catch (error) {
-      console.error('费用预估失败:', error)
-      ElMessage.error('费用预估失败')
-      throw error
-    }
-  }
-
-  /**
-   * 清空当前费用配置
-   */
   const clearCurrentPriceConfig = () => {
     currentPriceConfig.value = null
   }
 
-  /**
-   * 重置分页
-   */
   const resetPagination = () => {
     currentPage.value = 1
     total.value = 0
@@ -195,8 +139,6 @@ export const usePriceConfigStore = defineStore('priceConfig', () => {
     modifyPriceConfig,
     removePriceConfig,
     toggleActive,
-    fetchCurrentPriceConfig,
-    estimateFee,
     clearCurrentPriceConfig,
     resetPagination
   }
