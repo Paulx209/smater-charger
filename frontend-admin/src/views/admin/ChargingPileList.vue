@@ -5,7 +5,7 @@
       <div class="header-content">
         <div class="title-section">
           <h1 class="page-title">
-            <el-icon class="title-icon"><Charging /></el-icon>
+            <el-icon class="title-icon"><Lightning /></el-icon>
             充电桩管理
           </h1>
           <p class="page-subtitle">管理和监控所有充电桩设备</p>
@@ -105,7 +105,7 @@
         <el-col :span="6">
           <div class="stat-card stat-card-primary">
             <div class="stat-icon">
-              <el-icon><Charging /></el-icon>
+              <el-icon><Lightning /></el-icon>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ total }}</div>
@@ -164,7 +164,7 @@
           <el-table-column prop="name" label="充电桩名称" min-width="150">
             <template #default="{ row }">
               <div class="pile-name">
-                <el-icon class="pile-icon"><Charging /></el-icon>
+                <el-icon class="pile-icon"><Lightning /></el-icon>
                 <span>{{ row.name }}</span>
               </div>
             </template>
@@ -301,7 +301,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Charging,
+    Lightning,
   Plus,
   Search,
   Refresh,
@@ -546,7 +546,7 @@ const getStatusTagType = (status?: string) => {
 const getStatusIcon = (status: string) => {
   const map: Record<string, any> = {
     AVAILABLE: CircleCheck,
-    OCCUPIED: Charging,
+    OCCUPIED: Lightning,
     MAINTENANCE: Tools,
     FAULT: WarningFilled
   }
