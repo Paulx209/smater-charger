@@ -9,95 +9,77 @@ import type {
   AnnouncementClientListResponse
 } from '@/types/announcement'
 
-/**
- * 系统公告API
- */
-
-// ==================== 管理端接口 ====================
-
-// 创建公告
-export const createAnnouncement = (data: AnnouncementCreateRequest) => {
-  return request<AnnouncementInfo>({
+export const createAnnouncement = (data: AnnouncementCreateRequest): Promise<AnnouncementInfo> => {
+  return request({
     url: '/announcement/admin',
     method: 'post',
     data
-  })
+  }) as Promise<AnnouncementInfo>
 }
 
-// 更新公告
-export const updateAnnouncement = (id: number, data: AnnouncementUpdateRequest) => {
-  return request<AnnouncementInfo>({
+export const updateAnnouncement = (id: number, data: AnnouncementUpdateRequest): Promise<AnnouncementInfo> => {
+  return request({
     url: `/announcement/admin/${id}`,
     method: 'put',
     data
-  })
+  }) as Promise<AnnouncementInfo>
 }
 
-// 删除公告
-export const deleteAnnouncement = (id: number) => {
-  return request<void>({
+export const deleteAnnouncement = (id: number): Promise<void> => {
+  return request({
     url: `/announcement/admin/${id}`,
     method: 'delete'
-  })
+  }) as Promise<void>
 }
 
-// 发布公告
-export const publishAnnouncement = (id: number) => {
-  return request<AnnouncementInfo>({
+export const publishAnnouncement = (id: number): Promise<AnnouncementInfo> => {
+  return request({
     url: `/announcement/admin/${id}/publish`,
     method: 'put'
-  })
+  }) as Promise<AnnouncementInfo>
 }
 
-// 下线公告
-export const unpublishAnnouncement = (id: number) => {
-  return request<AnnouncementInfo>({
+export const unpublishAnnouncement = (id: number): Promise<AnnouncementInfo> => {
+  return request({
     url: `/announcement/admin/${id}/unpublish`,
     method: 'put'
-  })
+  }) as Promise<AnnouncementInfo>
 }
 
-// 查询公告列表（管理端）
-export const getAdminAnnouncementList = (params?: AnnouncementQueryParams) => {
-  return request<AnnouncementListResponse>({
+export const getAdminAnnouncementList = (params?: AnnouncementQueryParams): Promise<AnnouncementListResponse> => {
+  return request({
     url: '/announcement/admin',
     method: 'get',
     params
-  })
+  }) as Promise<AnnouncementListResponse>
 }
 
-// 查询公告详情（管理端）
-export const getAdminAnnouncementDetail = (id: number) => {
-  return request<AnnouncementInfo>({
+export const getAdminAnnouncementDetail = (id: number): Promise<AnnouncementInfo> => {
+  return request({
     url: `/announcement/admin/${id}`,
     method: 'get'
-  })
+  }) as Promise<AnnouncementInfo>
 }
 
-// ==================== 车主端接口 ====================
-
-// 查询公告列表（车主端）
-export const getAnnouncementList = (params?: { page?: number; size?: number }) => {
-  return request<AnnouncementClientListResponse>({
+export const getAnnouncementList = (params?: { page?: number; size?: number }): Promise<AnnouncementClientListResponse> => {
+  return request({
     url: '/announcement',
     method: 'get',
     params
-  })
+  }) as Promise<AnnouncementClientListResponse>
 }
 
-// 查询公告详情（车主端）
-export const getAnnouncementDetail = (id: number) => {
-  return request<AnnouncementClientInfo>({
+export const getAnnouncementDetail = (id: number): Promise<AnnouncementClientInfo> => {
+  return request({
     url: `/announcement/${id}`,
     method: 'get'
-  })
+  }) as Promise<AnnouncementClientInfo>
 }
 
-// 查询最新公告（车主端）
-export const getLatestAnnouncements = (limit: number = 3) => {
-  return request<AnnouncementClientInfo[]>({
+export const getLatestAnnouncements = (limit: number = 3): Promise<AnnouncementClientInfo[]> => {
+  return request({
     url: '/announcement/latest',
     method: 'get',
     params: { limit }
-  })
+  }) as Promise<AnnouncementClientInfo[]>
 }

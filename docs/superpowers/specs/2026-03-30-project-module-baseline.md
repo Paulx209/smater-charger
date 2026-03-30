@@ -150,3 +150,14 @@
 - Validation result:
   - user-management-specific `frontend-admin` type-check failures are cleared
   - remaining `frontend-admin` failures are pre-existing and outside this change
+
+## 2026-03-30 Announcement Store Response Alignment Update
+
+- Change completed: `announcement-store-response-alignment`
+- Scope completed:
+  - aligned admin announcement API typings to the unwrapped request contract
+  - aligned announcement store pagination and detail loading to direct data models
+  - aligned announcement form and list rendering to the corrected admin models
+- Validation result:
+  - announcement-specific `frontend-admin` type-check failures are cleared
+  - remaining `frontend-admin` failures are pre-existing and outside this change

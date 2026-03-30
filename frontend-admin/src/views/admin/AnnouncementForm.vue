@@ -4,33 +4,17 @@
       <template #header>
         <div class="card-header">
           <el-button @click="handleBack" :icon="ArrowLeft">返回</el-button>
-          <span class="header-title">{{ isEdit ? '编辑公告' : '新增公告' }}</span>
+          <span class="header-title">{{ isEdit ? '编辑公告' : '新建公告' }}</span>
         </div>
       </template>
 
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-        class="announcement-form"
-      >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" class="announcement-form">
         <el-form-item label="公告标题" prop="title">
-          <el-input
-            v-model="form.title"
-            placeholder="请输入公告标题"
-            maxlength="200"
-            show-word-limit
-          />
+          <el-input v-model="form.title" placeholder="请输入公告标题" maxlength="200" show-word-limit />
         </el-form-item>
 
         <el-form-item label="公告内容" prop="content">
-          <QuillEditor
-            v-model:content="form.content"
-            content-type="html"
-            :options="editorOptions"
-            style="height: 400px"
-          />
+          <QuillEditor v-model:content="form.content" content-type="html" :options="editorOptions" style="height: 400px" />
         </el-form-item>
 
         <el-form-item label="生效时间范围">
@@ -44,19 +28,13 @@
             value-format="YYYY-MM-DDTHH:mm:ss"
             @change="handleTimeRangeChange"
           />
-          <div class="form-tip">不设置表示长期有效</div>
+          <div class="form-tip">不填写则表示长期有效。</div>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="info" @click="handleSaveDraft" :loading="saving">
-            保存草稿
-          </el-button>
-          <el-button type="primary" @click="handlePublish" :loading="publishing">
-            发布
-          </el-button>
-          <el-button @click="handleBack">
-            取消
-          </el-button>
+          <el-button type="info" @click="handleSaveDraft" :loading="saving">保存草稿</el-button>
+          <el-button type="primary" @click="handlePublish" :loading="publishing">立即发布</el-button>
+          <el-button @click="handleBack">取消</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -64,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -77,21 +55,14 @@ const router = useRouter()
 const route = useRoute()
 const announcementStore = useAnnouncementStore()
 
-// 表单引用
 const formRef = ref<FormInstance>()
-
-// 加载状态
 const loading = ref(false)
 const saving = ref(false)
 const publishing = ref(false)
 
-// 是否编辑模式
-const isEdit = computed(() => !!route.params.id)
-
-// 时间范围
+const isEdit = computed(() => Boolean(route.params.id))
 const timeRange = ref<[string, string] | null>(null)
 
-// 表单数据
 const form = reactive({
   title: '',
   content: '',
@@ -99,20 +70,19 @@ const form = reactive({
   endTime: undefined as string | undefined
 })
 
-// Quill编辑器配置
 const editorOptions = {
   theme: 'snow',
   modules: {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
       ['blockquote', 'code-block'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      [{ 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
+      [{ header: 1 }, { header: 2 }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
       ['link', 'image'],
       ['clean']
     ]
@@ -120,53 +90,48 @@ const editorOptions = {
   placeholder: '请输入公告内容...'
 }
 
-// 表单验证规则
 const rules: FormRules = {
   title: [
     { required: true, message: '请输入公告标题', trigger: 'blur' },
-    { max: 200, message: '标题最多200个字符', trigger: 'blur' }
+    { max: 200, message: '标题长度不能超过 200 个字符', trigger: 'blur' }
   ],
-  content: [
-    { required: true, message: '请输入公告内容', trigger: 'blur' }
-  ]
+  content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
 }
 
-// 时间范围改变
 const handleTimeRangeChange = (value: [string, string] | null) => {
   if (value) {
     form.startTime = value[0]
     form.endTime = value[1]
-  } else {
-    form.startTime = undefined
-    form.endTime = undefined
+    return
   }
+  form.startTime = undefined
+  form.endTime = undefined
 }
 
-// 返回列表
 const handleBack = () => {
   router.back()
 }
 
-// 保存草稿
+const validateTimeRange = () => {
+  if (!form.startTime || !form.endTime) {
+    return true
+  }
+  if (new Date(form.startTime) >= new Date(form.endTime)) {
+    ElMessage.error('开始时间必须早于结束时间')
+    return false
+  }
+  return true
+}
+
 const handleSaveDraft = async () => {
   if (!formRef.value) return
 
   try {
-    // 验证表单
     await formRef.value.validate()
-
-    // 验证时间范围
-    if (form.startTime && form.endTime) {
-      if (new Date(form.startTime) >= new Date(form.endTime)) {
-        ElMessage.error('开始时间必须小于结束时间')
-        return
-      }
-    }
+    if (!validateTimeRange()) return
 
     saving.value = true
-
     if (isEdit.value) {
-      // 编辑模式：更新公告
       await announcementStore.modifyAnnouncement(Number(route.params.id), {
         title: form.title,
         content: form.content,
@@ -174,7 +139,6 @@ const handleSaveDraft = async () => {
         endTime: form.endTime
       })
     } else {
-      // 新增模式：创建草稿
       await announcementStore.createNewAnnouncement({
         title: form.title,
         content: form.content,
@@ -184,9 +148,9 @@ const handleSaveDraft = async () => {
       })
     }
 
-    ElMessage.success('保存成功')
+    ElMessage.success('草稿保存成功')
     router.push('/admin/announcement')
-  } catch (error: any) {
+  } catch (error) {
     if (error !== 'cancel') {
       console.error('保存草稿失败:', error)
     }
@@ -195,26 +159,15 @@ const handleSaveDraft = async () => {
   }
 }
 
-// 发布
 const handlePublish = async () => {
   if (!formRef.value) return
 
   try {
-    // 验证表单
     await formRef.value.validate()
-
-    // 验证时间范围
-    if (form.startTime && form.endTime) {
-      if (new Date(form.startTime) >= new Date(form.endTime)) {
-        ElMessage.error('开始时间必须小于结束时间')
-        return
-      }
-    }
+    if (!validateTimeRange()) return
 
     publishing.value = true
-
     if (isEdit.value) {
-      // 编辑模式：先更新，再发布
       await announcementStore.modifyAnnouncement(Number(route.params.id), {
         title: form.title,
         content: form.content,
@@ -223,7 +176,6 @@ const handlePublish = async () => {
       })
       await announcementStore.publishAnnouncementById(Number(route.params.id))
     } else {
-      // 新增模式：直接发布
       await announcementStore.createNewAnnouncement({
         title: form.title,
         content: form.content,
@@ -233,31 +185,28 @@ const handlePublish = async () => {
       })
     }
 
-    ElMessage.success('发布成功')
+    ElMessage.success('公告发布成功')
     router.push('/admin/announcement')
-  } catch (error: any) {
+  } catch (error) {
     if (error !== 'cancel') {
-      console.error('发布失败:', error)
+      console.error('发布公告失败:', error)
     }
   } finally {
     publishing.value = false
   }
 }
 
-// 加载公告详情（编辑模式）
 const loadAnnouncementDetail = async () => {
   if (!isEdit.value) return
 
   try {
     loading.value = true
     const announcement = await announcementStore.fetchAdminAnnouncementDetail(Number(route.params.id))
-
     form.title = announcement.title
     form.content = announcement.content
     form.startTime = announcement.startTime
     form.endTime = announcement.endTime
 
-    // 设置时间范围
     if (announcement.startTime && announcement.endTime) {
       timeRange.value = [announcement.startTime, announcement.endTime]
     }
@@ -270,7 +219,6 @@ const loadAnnouncementDetail = async () => {
   }
 }
 
-// 组件挂载时加载数据
 onMounted(() => {
   if (isEdit.value) {
     loadAnnouncementDetail()
