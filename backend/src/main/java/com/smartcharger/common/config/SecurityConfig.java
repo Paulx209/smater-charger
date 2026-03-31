@@ -61,9 +61,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 允许访问的URL（不需要认证）
                         .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/health"
+                                "/auth/login",
+                                "/auth/register",
+                                "/health"
                         ).permitAll()
                         // 其他所有请求都需要认证
                         .anyRequest().authenticated()
