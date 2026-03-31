@@ -89,13 +89,14 @@ import {
   getReservationStatusText,
   getReservationUserLabel
 } from '@/types/reservation'
+import { navigateBack } from '@/utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
 const reservationStore = useReservationStore()
 
 const handleBack = () => {
-  router.push('/reservations')
+  navigateBack(router, '/reservations')
 }
 
 const loadDetail = async () => {

@@ -257,6 +257,7 @@ import {
   formatElectricQuantity,
   formatFee
 } from '@/types/chargingRecord'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -305,7 +306,7 @@ const endChargingRules: FormRules = {
 
 // 返回列表
 const handleBack = () => {
-  router.back()
+  navigateBack(router, '/charging-record')
 }
 
 // 重试

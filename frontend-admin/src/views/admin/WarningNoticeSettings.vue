@@ -27,6 +27,7 @@
 import { onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWarningNoticeStore } from '@/stores/warningNotice'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const warningNoticeStore = useWarningNoticeStore()
@@ -44,7 +45,7 @@ const handleSubmit = async () => {
 }
 
 const handleBack = () => {
-  router.push('/warning-notices')
+  navigateBack(router, '/warning-notices')
 }
 
 onMounted(loadConfig)

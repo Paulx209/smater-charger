@@ -67,6 +67,7 @@ import {
   getWarningNoticeTypeText,
   getWarningNoticeUserLabel
 } from '@/types/warningNotice'
+import { navigateBack } from '@/utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
@@ -80,7 +81,7 @@ const loadDetail = async () => {
 }
 
 const handleBack = () => {
-  router.push('/warning-notices')
+  navigateBack(router, '/warning-notices')
 }
 
 const handleDelete = async () => {

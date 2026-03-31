@@ -142,6 +142,7 @@ import {
   canCancelReservation,
   type ReservationStatus
 } from '@/types/reservation'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -235,7 +236,7 @@ const handleViewPile = () => {
 
 // 返回
 const handleBack = () => {
-  router.push('/reservations')
+  navigateBack(router, '/reservations')
 }
 
 // 取消预约

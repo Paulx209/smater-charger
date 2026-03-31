@@ -67,13 +67,14 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useVehicleStore } from '@/stores/vehicle'
 import { formatDateTime, getDefaultStatusText, getVehicleOwnerLabel } from '@/types/vehicle'
+import { navigateBack } from '@/utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
 const vehicleStore = useVehicleStore()
 
 const handleBack = () => {
-  router.push('/vehicles')
+  navigateBack(router, '/vehicles')
 }
 
 const loadDetail = async () => {

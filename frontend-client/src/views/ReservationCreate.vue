@@ -152,6 +152,7 @@ import { useVehicleStore } from '@/stores/vehicle'
 import { useChargingPileStore } from '@/stores/chargingPile'
 import { validateReservationTime, calculateReservationDuration } from '@/types/reservation'
 import { ChargingPileStatus, ChargingPileStatusTagType } from '@/types/chargingPile'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -309,7 +310,7 @@ const handleAddVehicle = () => {
 
 // 返回
 const handleBack = () => {
-  router.push('/reservations')
+  navigateBack(router, '/reservations')
 }
 
 // 提交表单

@@ -176,6 +176,7 @@ import { useFaultReportStore } from '@/stores/faultReport'
 import { usePriceConfigStore } from '@/stores/priceConfig'
 import { useVehicleStore } from '@/stores/vehicle'
 import { ChargingPileStatus, ChargingPileStatusTagType } from '@/types/chargingPile'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -201,7 +202,7 @@ const faultReportRules: FormRules = {
 }
 
 const handleBack = () => {
-  router.back()
+  navigateBack(router, '/charging-piles')
 }
 
 const formatDateTime = (dateTime: string) => {

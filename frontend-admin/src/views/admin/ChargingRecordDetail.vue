@@ -83,13 +83,14 @@ import {
   getChargingRecordStatusTagType,
   getChargingRecordStatusText
 } from '@/types/chargingRecord'
+import { navigateBack } from '@/utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
 const chargingRecordStore = useChargingRecordStore()
 
 const handleBack = () => {
-  router.push('/charging-records')
+  navigateBack(router, '/charging-records')
 }
 
 const loadDetail = async () => {

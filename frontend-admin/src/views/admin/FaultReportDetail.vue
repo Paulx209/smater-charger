@@ -99,6 +99,7 @@ import {
   FaultReportStatusText,
   formatPileType
 } from '@/types/faultReport'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -119,7 +120,7 @@ const rules: FormRules = {
 }
 
 const handleBack = () => {
-  router.push('/fault-reports')
+  navigateBack(router, '/fault-reports')
 }
 
 const loadDetail = async () => {

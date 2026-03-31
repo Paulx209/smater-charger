@@ -95,3 +95,17 @@
 - `frontend-admin`: `npm.cmd run build` 通过
 - `frontend-client`: `npm.cmd run build` 通过
 - 两个前端构建均存在 Vite 大包告警，但不影响构建成功
+
+## 2026-03-31 页面返回入口补齐
+
+- 新增 `page-navigation-backfill` change，用于统一前后端子页面返回入口。
+- `frontend-admin` 与 `frontend-client` 目标详情页、表单页、设置页、统计页已补齐返回逻辑。
+- 统一返回策略为：优先 `router.back()`，无可靠历史时跳模块列表页。
+- `frontend-admin` `npm.cmd run type-check` 通过。
+- `frontend-client` `npm.cmd run type-check` 通过。
+- 本地人工回退测试待继续执行。
+
+## 2026-03-31 注册 403 修复
+
+- 修正后端 Spring Security 白名单路径，去除重复的 `/api` 前缀。
+- `POST /api/auth/register` 本地验证已恢复为可用。

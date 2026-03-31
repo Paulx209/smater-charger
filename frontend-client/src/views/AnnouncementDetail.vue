@@ -45,6 +45,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Clock, Calendar } from '@element-plus/icons-vue'
 import { useAnnouncementStore } from '@/stores/announcement'
 import { formatTimeRange, type AnnouncementClientInfo } from '@/types/announcement'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -55,7 +56,7 @@ const announcement = computed(() => announcementStore.currentAnnouncement as Ann
 
 // 返回列表
 const handleBack = () => {
-  router.back()
+  navigateBack(router, '/announcement')
 }
 
 // 格式化日期时间

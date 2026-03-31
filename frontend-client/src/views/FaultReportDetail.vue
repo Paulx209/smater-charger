@@ -116,13 +116,14 @@ import {
   FaultReportStatusText,
   formatPileType
 } from '@/types/faultReport'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
 const faultReportStore = useFaultReportStore()
 
 const handleBack = () => {
-  router.push('/fault-reports')
+  navigateBack(router, '/fault-reports')
 }
 
 const formatDateTime = (dateTime: string) => {

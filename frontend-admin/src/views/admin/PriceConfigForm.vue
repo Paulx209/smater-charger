@@ -117,6 +117,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { usePriceConfigStore } from '@/stores/priceConfig'
 import { formatUnitPrice, type ChargingPileType } from '@/types/priceConfig'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -208,7 +209,7 @@ const formatTotalPrice = () => {
 
 // 返回
 const handleBack = () => {
-  router.push('/price-config')
+  navigateBack(router, '/price-config')
 }
 
 // 提交表单

@@ -50,6 +50,7 @@ import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { useAnnouncementStore } from '@/stores/announcement'
 import { AnnouncementStatus } from '@/types/announcement'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const route = useRoute()
@@ -109,7 +110,7 @@ const handleTimeRangeChange = (value: [string, string] | null) => {
 }
 
 const handleBack = () => {
-  router.back()
+  navigateBack(router, '/announcement')
 }
 
 const validateTimeRange = () => {

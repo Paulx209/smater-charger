@@ -61,6 +61,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFaultReportStore } from '@/stores/faultReport'
+import { navigateBack } from '@/utils/navigation'
 
 const router = useRouter()
 const faultReportStore = useFaultReportStore()
@@ -81,7 +82,7 @@ const handleReset = async () => {
 }
 
 const handleBack = () => {
-  router.push('/fault-reports')
+  navigateBack(router, '/fault-reports')
 }
 
 onMounted(() => {

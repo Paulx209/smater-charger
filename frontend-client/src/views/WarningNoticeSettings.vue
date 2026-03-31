@@ -3,6 +3,7 @@
     <el-card class="settings-card" v-loading="loading">
       <template #header>
         <div class="card-header">
+          <el-button :icon="ArrowLeft" @click="handleBack">返回</el-button>
           <span>预警设置</span>
         </div>
       </template>
@@ -15,7 +16,7 @@
           label-width="150px"
           class="settings-form"
         >
-          <el-form-item label="超时占位预警阈值" prop="threshold">
+          <el-form-item label="超时预警阈值" prop="threshold">
             <div class="threshold-input">
               <el-slider
                 v-model="form.threshold"
@@ -36,7 +37,7 @@
               <span class="unit">分钟</span>
             </div>
             <div class="form-tip">
-              充电完成后，如果在设定时间内未结束充电记录，将触发超时占位预警
+              当充电记录接近超时结束时，系统会按照该阈值提前发送提醒。
             </div>
           </el-form-item>
 
@@ -50,23 +51,22 @@
           </el-form-item>
         </el-form>
 
-        <!-- 说明信息 -->
         <el-divider />
 
         <div class="info-section">
-          <h3>功能说明</h3>
+          <h3>说明</h3>
           <ul>
             <li>
-              <strong>超时占位预警：</strong>当您的充电完成后，如果在设定时间内未结束充电记录，系统将发送预警通知提醒您尽快移车。
+              <strong>超时预警阈值：</strong>用于控制在充电记录即将超时前，提前多少分钟发送预警通知。
             </li>
             <li>
-              <strong>预警阈值：</strong>可设置为10-60分钟，默认为30分钟。建议根据您的实际情况设置合理的阈值。
+              <strong>阈值范围：</strong>当前支持 10-60 分钟，默认 30 分钟。
             </li>
             <li>
-              <strong>通知方式：</strong>系统将通过站内通知和短信两种方式发送预警，确保您能及时收到提醒。
+              <strong>通知范围：</strong>设置生效后，新的提醒将按最新阈值生成。
             </li>
             <li>
-              <strong>避免占位：</strong>及时移车不仅可以避免占用充电资源，也能为其他车主提供便利。
+              <strong>恢复默认：</strong>仅恢复当前表单值，仍需点击“保存设置”才会真正写回后端。
             </li>
           </ul>
         </div>
@@ -74,8 +74,8 @@
         <div class="example-section">
           <h3>示例</h3>
           <el-alert
-            title="当前设置示例"
-            :description="`如果您的充电在 12:00 完成，系统将在 ${getExampleTime} 发送预警通知。`"
+            title="预警时间示例"
+            :description="`如果某条充电记录预计在 12:00 结束，当前阈值为 ${form.threshold} 分钟，则系统会在 ${getExampleTime} 触发提醒。`"
             type="info"
             :closable="false"
           />
@@ -87,38 +87,36 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { useWarningNoticeStore } from '@/stores/warningNotice'
+import { navigateBack } from '@/utils/navigation'
 
+const router = useRouter()
 const warningNoticeStore = useWarningNoticeStore()
 
-// 表单引用
 const formRef = ref<FormInstance>()
-
-// 加载状态
 const loading = ref(false)
 const saving = ref(false)
 
-// 表单数据
 const form = reactive({
   threshold: 30
 })
 
-// 滑块标记
 const marks = {
   10: '10分钟',
   30: '30分钟',
   60: '60分钟'
 }
 
-// 表单验证规则
 const rules: FormRules = {
   threshold: [
-    { required: true, message: '请设置预警阈值', trigger: 'blur' },
+    { required: true, message: '请输入预警阈值', trigger: 'blur' },
     {
-      validator: (rule, value, callback) => {
+      validator: (_rule: unknown, value: number, callback: (error?: Error) => void) => {
         if (value < 10 || value > 60) {
-          callback(new Error('预警阈值必须在10-60分钟之间'))
+          callback(new Error('预警阈值必须在 10-60 分钟之间'))
         } else {
           callback()
         }
@@ -128,7 +126,6 @@ const rules: FormRules = {
   ]
 }
 
-// 计算示例时间
 const getExampleTime = computed(() => {
   const time = new Date()
   time.setHours(12, 0, 0, 0)
@@ -138,48 +135,44 @@ const getExampleTime = computed(() => {
   return `${hours}:${minutes}`
 })
 
-// 保存设置
+const handleBack = () => {
+  navigateBack(router, '/warning-notice')
+}
+
 const handleSave = async () => {
   if (!formRef.value) return
 
   try {
-    // 验证表单
     await formRef.value.validate()
-
     saving.value = true
-
-    // 调用API保存设置
     await warningNoticeStore.updateThresholdConfig({
       threshold: form.threshold
     })
   } catch (error) {
-    console.error('保存设置失败:', error)
+    console.error('保存预警设置失败:', error)
   } finally {
     saving.value = false
   }
 }
 
-// 恢复默认
 const handleReset = () => {
   form.threshold = 30
-  ElMessage.info('已恢复默认设置（30分钟）')
+  ElMessage.info('已恢复为默认阈值 30 分钟')
 }
 
-// 加载当前配置
 const loadConfig = async () => {
   try {
     loading.value = true
     const threshold = await warningNoticeStore.fetchThresholdConfig()
     form.threshold = threshold
   } catch (error) {
-    console.error('加载配置失败:', error)
-    ElMessage.error('加载配置失败')
+    console.error('加载预警设置失败:', error)
+    ElMessage.error('加载预警设置失败')
   } finally {
     loading.value = false
   }
 }
 
-// 组件挂载时加载配置
 onMounted(() => {
   loadConfig()
 })
@@ -197,6 +190,9 @@ onMounted(() => {
 }
 
 .card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   font-size: 18px;
   font-weight: 600;
 }
