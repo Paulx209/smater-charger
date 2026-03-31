@@ -1,7 +1,9 @@
 /**
  * 用户管理相关API接口
  */
+import axios from 'axios'
 import request from '@/utils/request'
+import { getToken } from '@/utils/auth'
 import type {
   UserAdminResponse,
   UserQueryParams,
@@ -125,12 +127,13 @@ export function exportUsers(params: {
   status?: number
   isActive?: boolean
 }): Promise<Blob> {
-  return request({
-    url: '/admin/users/export',
-    method: 'get',
+  const token = getToken()
+
+  return axios.get('/api/admin/users/export', {
     params,
-    responseType: 'blob'
-  })
+    responseType: 'blob',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+  }).then((response) => response.data as Blob)
 }
 
 /**

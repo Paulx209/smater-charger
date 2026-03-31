@@ -4,7 +4,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
-import { setToken, removeToken } from '@/utils/auth'
+import { getToken, setToken, removeToken } from '@/utils/auth'
 import {
   login as loginApi,
   logout as logoutApi,
@@ -15,7 +15,7 @@ import {
 
 export const useUserStore = defineStore('user', () => {
   // 状态
-  const token = ref<string>('')
+  const token = ref<string>(getToken() ?? '')
   const userInfo = ref<UserInfo | null>(null)
 
   /**

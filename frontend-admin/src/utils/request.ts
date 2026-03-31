@@ -64,7 +64,7 @@ request.interceptors.response.use(
   (error: AxiosError) => {
     console.error('响应错误:', error)
 
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       ElMessage.error('登录已过期，请重新登录')
       removeToken()
       router.push('/login')
