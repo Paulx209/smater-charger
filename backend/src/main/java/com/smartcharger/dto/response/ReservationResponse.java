@@ -10,95 +10,51 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * 预约响应DTO
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReservationResponse {
 
-    /**
-     * 预约ID
-     */
     private Long id;
 
-    /**
-     * 用户ID
-     */
     private Long userId;
 
-    /**
-     * 充电桩ID
-     */
+    private String username;
+
+    private String nickname;
+
     private Long chargingPileId;
 
-    /**
-     * 充电桩编号
-     */
     private String chargingPileCode;
 
-    /**
-     * 充电桩位置
-     */
     private String chargingPileLocation;
 
-    /**
-     * 充电桩经度
-     */
     private BigDecimal chargingPileLng;
 
-    /**
-     * 充电桩纬度
-     */
     private BigDecimal chargingPileLat;
 
-    /**
-     * 充电桩类型
-     */
     private String chargingPileType;
 
-    /**
-     * 充电桩类型描述
-     */
     private String chargingPileTypeDesc;
 
-    /**
-     * 充电桩功率
-     */
     private BigDecimal chargingPilePower;
 
-    /**
-     * 预约开始时间
-     */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime startTime;
 
-    /**
-     * 预约结束时间
-     */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime endTime;
 
-    /**
-     * 预约状态
-     */
     private ReservationStatus status;
 
-    /**
-     * 预约状态描述
-     */
     private String statusDesc;
 
-    /**
-     * 剩余时间（分钟），仅PENDING状态返回
-     */
     private Long remainingMinutes;
 
-    /**
-     * 创建时间
-     */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createdTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime updatedTime;
 }

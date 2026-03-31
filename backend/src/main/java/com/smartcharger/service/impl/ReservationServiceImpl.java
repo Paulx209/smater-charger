@@ -7,94 +7,95 @@ import com.smartcharger.dto.response.AvailabilityCheckResponse;
 import com.smartcharger.dto.response.ReservationResponse;
 import com.smartcharger.entity.ChargingPile;
 import com.smartcharger.entity.Reservation;
+import com.smartcharger.entity.User;
 import com.smartcharger.entity.enums.ChargingPileStatus;
 import com.smartcharger.entity.enums.ReservationStatus;
 import com.smartcharger.repository.ChargingPileRepository;
 import com.smartcharger.repository.ReservationRepository;
+import com.smartcharger.repository.UserRepository;
 import com.smartcharger.service.ReservationService;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * 预约服务实现类
- */
 @Slf4j
 @Service
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final ChargingPileRepository chargingPileRepository;
+    private final UserRepository userRepository;
     private final RedissonClient redissonClient;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   ChargingPileRepository chargingPileRepository,
+                                  UserRepository userRepository,
                                   RedissonClient redissonClient) {
         this.reservationRepository = reservationRepository;
         this.chargingPileRepository = chargingPileRepository;
+        this.userRepository = userRepository;
         this.redissonClient = redissonClient;
     }
 
     @Override
     @Transactional
     public ReservationResponse createReservation(Long userId, ReservationCreateRequest request) {
-        log.info("创建预约: userId={}, chargingPileId=", userId, request.getChargingPileId());
+        log.info("Create reservation: userId={}, chargingPileId={}", userId, request.getChargingPileId());
 
-        // 1. 检查用户是否已有进行中的预约
         Optional<Reservation> existingReservation =
                 reservationRepository.findByUserIdAndStatus(userId, ReservationStatus.PENDING);
         if (existingReservation.isPresent()) {
             throw new BusinessException(ResultCode.USER_HAS_PENDING_RESERVATION);
         }
 
-        // 2. 检查充电桩是否存在
         ChargingPile chargingPile = chargingPileRepository.findById(request.getChargingPileId())
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
-        // 3. 使用分布式锁防止并发预约
         String lockKey = "reservation:pile:" + request.getChargingPileId();
         RLock lock = redissonClient.getLock(lockKey);
 
         try {
-            // 尝试获取锁，最多等待5秒，锁定10秒
             if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
-                // 4. 在锁内重新查询充电桩状态，确保使用最新数据
                 chargingPile = chargingPileRepository.findById(request.getChargingPileId())
                         .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
-                // 5. 检查充电桩状态是否为空闲
                 if (chargingPile.getStatus() != ChargingPileStatus.IDLE) {
                     throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
                 }
 
-                // 6. 计算预约时间
-                LocalDateTime startTime = request.getStartTime() != null ?
-                        request.getStartTime() : LocalDateTime.now();
+                LocalDateTime startTime = request.getStartTime() != null
+                        ? request.getStartTime()
+                        : LocalDateTime.now();
                 LocalDateTime endTime = startTime.plusHours(2);
 
-                // 7. 检查时间段是否冲突
-                List<Reservation> conflictReservations =
-                        reservationRepository.findByChargingPileIdAndStatusAndEndTimeAfter(
+                List<Reservation> conflictReservations = reservationRepository
+                        .findByChargingPileIdAndStatusAndEndTimeAfter(
                                 request.getChargingPileId(), ReservationStatus.PENDING, startTime);
 
                 if (!conflictReservations.isEmpty()) {
                     throw new BusinessException(ResultCode.TIME_CONFLICT);
                 }
 
-                // 8. 创建预约
                 Reservation reservation = new Reservation();
                 reservation.setUserId(userId);
                 reservation.setChargingPileId(request.getChargingPileId());
@@ -103,18 +104,17 @@ public class ReservationServiceImpl implements ReservationService {
                 reservation.setStatus(ReservationStatus.PENDING);
                 Reservation savedReservation = reservationRepository.save(reservation);
 
-                // 9. 更新充电桩状态为已预约
                 chargingPile.setStatus(ChargingPileStatus.RESERVED);
                 chargingPileRepository.save(chargingPile);
 
-                log.info("创建预约成功: reservationId={}, chargingPileId={}",
+                log.info("Reservation created: reservationId={}, chargingPileId={}",
                         savedReservation.getId(), request.getChargingPileId());
 
-                // 10. 返回预约信息
-                return buildReservationResponse(savedReservation, chargingPile);
-            } else {
-                throw new BusinessException(ResultCode.SYSTEM_BUSY);
+                User user = userRepository.findById(userId).orElse(null);
+                return buildReservationResponse(savedReservation, chargingPile, user);
             }
+
+            throw new BusinessException(ResultCode.SYSTEM_BUSY);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR);
@@ -128,191 +128,106 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional
     public void cancelReservation(Long userId, Long id) {
-        log.info("取消预约: userId={}, reservationId={}", userId, id);
+        log.info("Cancel reservation by owner: userId={}, reservationId={}", userId, id);
 
-        // 1. 查询预约（验证权限）
         Reservation reservation = reservationRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(ResultCode.FORBIDDEN));
 
-        // 2. 检查预约状态
-        if (reservation.getStatus() != ReservationStatus.PENDING) {
-            throw new BusinessException(ResultCode.RESERVATION_CANNOT_CANCEL);
-        }
-
-        // 3. 更新预约状态
-        reservation.setStatus(ReservationStatus.CANCELLED);
-        reservationRepository.save(reservation);
-
-        // 4. 更新充电桩状态为空闲
-        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId())
-                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
-        chargingPile.setStatus(ChargingPileStatus.IDLE);
-        chargingPileRepository.save(chargingPile);
-
-        log.info("取消预约成功: reservationId={}", id);
+        cancelPendingReservation(reservation);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReservationResponse> getMyReservations(Long userId, ReservationStatus status,
-                                                        Integer page, Integer size) {
-        log.info("查询我的预约列表: userId={}, status={}, page={}, size={}", userId, status, page, size);
+                                                       Integer page, Integer size) {
+        log.info("Get my reservations: userId={}, status={}, page={}, size={}", userId, status, page, size);
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Reservation> reservationPage;
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdTime"));
+        Page<Reservation> reservationPage = status != null
+                ? reservationRepository.findByUserIdAndStatusOrderByCreatedTimeDesc(userId, status, pageable)
+                : reservationRepository.findByUserIdOrderByCreatedTimeDesc(userId, pageable);
 
-        if (status != null) {
-            reservationPage = reservationRepository.findByUserIdAndStatusOrderByCreatedTimeDesc(
-                    userId, status, pageable);
-        } else {
-            reservationPage = reservationRepository.findByUserIdOrderByCreatedTimeDesc(
-                    userId, pageable);
-        }
+        Map<Long, ChargingPile> pileMap = batchFetchPiles(reservationPage.getContent());
+        User user = userRepository.findById(userId).orElse(null);
 
-        return reservationPage.map(reservation -> {
-            ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId())
-                    .orElse(null);
-            return buildReservationResponse(reservation, chargingPile);
-        });
+        List<ReservationResponse> responses = reservationPage.getContent().stream()
+                .map(reservation -> buildReservationResponse(
+                        reservation,
+                        pileMap.get(reservation.getChargingPileId()),
+                        user))
+                .toList();
+
+        return new PageImpl<>(responses, pageable, reservationPage.getTotalElements());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ReservationResponse getReservationById(Long userId, Long id) {
-        log.info("获取预约详情: userId={}, reservationId={}", userId, id);
+        log.info("Get reservation by owner: userId={}, reservationId={}", userId, id);
 
         Reservation reservation = reservationRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(ResultCode.FORBIDDEN));
 
-        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId())
-                .orElse(null);
+        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId()).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
 
-        return buildReservationResponse(reservation, chargingPile);
+        return buildReservationResponse(reservation, chargingPile, user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ReservationResponse getCurrentReservation(Long userId) {
-        log.info("获取当前进行中的预约: userId={}", userId);
+        log.info("Get current reservation: userId={}", userId);
 
         Optional<Reservation> reservationOpt =
                 reservationRepository.findByUserIdAndStatus(userId, ReservationStatus.PENDING);
-
         if (reservationOpt.isEmpty()) {
             return null;
         }
 
         Reservation reservation = reservationOpt.get();
-        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId())
-                .orElse(null);
+        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId()).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
 
-        return buildReservationResponse(reservation, chargingPile);
+        return buildReservationResponse(reservation, chargingPile, user);
     }
 
     @Override
     @Transactional
     public void handleExpiredReservations() {
-        // 查询所有过期的预约
-        List<Reservation> expiredReservations =
-                reservationRepository.findByStatusAndEndTimeBefore(
-                        ReservationStatus.PENDING, LocalDateTime.now());
+        List<Reservation> expiredReservations = reservationRepository.findByStatusAndEndTimeBefore(
+                ReservationStatus.PENDING, LocalDateTime.now());
 
         if (expiredReservations.isEmpty()) {
             return;
         }
 
-        log.info("开始处理过期预约，数量: {}", expiredReservations.size());
+        log.info("Handle expired reservations: count={}", expiredReservations.size());
 
-        // 批量处理
         for (Reservation reservation : expiredReservations) {
             try {
-                // 更新预约状态
                 reservation.setStatus(ReservationStatus.EXPIRED);
                 reservationRepository.save(reservation);
 
-                // 更新充电桩状态
-                ChargingPile chargingPile =
-                        chargingPileRepository.findById(reservation.getChargingPileId())
-                                .orElse(null);
-                if (chargingPile != null &&
-                        chargingPile.getStatus() == ChargingPileStatus.RESERVED) {
+                ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId()).orElse(null);
+                if (chargingPile != null && chargingPile.getStatus() == ChargingPileStatus.RESERVED) {
                     chargingPile.setStatus(ChargingPileStatus.IDLE);
                     chargingPileRepository.save(chargingPile);
                 }
 
-                log.info("处理过期预约成功: reservationId={}, chargingPileId={}",
+                log.info("Expired reservation handled: reservationId={}, chargingPileId={}",
                         reservation.getId(), reservation.getChargingPileId());
             } catch (Exception e) {
-                log.error("处理过期预约失败: reservationId={}, error={}",
-                        reservation.getId(), e.getMessage());
+                log.error("Failed to handle expired reservation: reservationId={}", reservation.getId(), e);
             }
         }
-
-        log.info("处理过期预约完成，成功处理: {} 条", expiredReservations.size());
-    }
-
-    /**
-     * 构建预约响应对象
-     */
-    private ReservationResponse buildReservationResponse(Reservation reservation, ChargingPile chargingPile) {
-        ReservationResponse.ReservationResponseBuilder builder = ReservationResponse.builder()
-                .id(reservation.getId())
-                .userId(reservation.getUserId())
-                .chargingPileId(reservation.getChargingPileId())
-                .startTime(reservation.getStartTime())
-                .endTime(reservation.getEndTime())
-                .status(reservation.getStatus())
-                .statusDesc(getStatusDesc(reservation.getStatus()))
-                .createdTime(reservation.getCreatedTime());
-
-        // 添加充电桩信息
-        if (chargingPile != null) {
-            builder.chargingPileCode(chargingPile.getCode())
-                    .chargingPileLocation(chargingPile.getLocation())
-                    .chargingPileLng(chargingPile.getLng())
-                    .chargingPileLat(chargingPile.getLat())
-                    .chargingPileType(chargingPile.getType().name())
-                    .chargingPileTypeDesc(getTypeDesc(chargingPile.getType().name()))
-                    .chargingPilePower(chargingPile.getPower());
-        }
-
-        // 计算剩余时间（仅PENDING状态）
-        if (reservation.getStatus() == ReservationStatus.PENDING) {
-            long remainingMinutes = Duration.between(LocalDateTime.now(), reservation.getEndTime()).toMinutes();
-            builder.remainingMinutes(Math.max(0, remainingMinutes));
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * 获取预约状态描述
-     */
-    private String getStatusDesc(ReservationStatus status) {
-        return switch (status) {
-            case PENDING -> "待使用";
-            case COMPLETED -> "已完成";
-            case CANCELLED -> "已取消";
-            case EXPIRED -> "已过期";
-        };
-    }
-
-    /**
-     * 获取充电桩类型描述
-     */
-    private String getTypeDesc(String type) {
-        return switch (type) {
-            case "AC" -> "交流慢充";
-            case "DC" -> "直流快充";
-            default -> type;
-        };
     }
 
     @Override
     public AvailabilityCheckResponse checkAvailability(Long pileId, LocalDateTime startTime, LocalDateTime endTime) {
-        log.info("检查充电桩可用性: pileId={}, startTime={}, endTime=", pileId, startTime, endTime);
+        log.info("Check reservation availability: pileId={}, startTime={}, endTime={}", pileId, startTime, endTime);
 
-        // 1. 检查充电桩是否存在
-        ChargingPile chargingPile = chargingPileRepository.findById(pileId)
-                .orElse(null);
-
+        ChargingPile chargingPile = chargingPileRepository.findById(pileId).orElse(null);
         if (chargingPile == null) {
             return AvailabilityCheckResponse.builder()
                     .available(false)
@@ -320,19 +235,16 @@ public class ReservationServiceImpl implements ReservationService {
                     .build();
         }
 
-        // 2. 检查充电桩状态
         if (chargingPile.getStatus() != ChargingPileStatus.IDLE) {
             return AvailabilityCheckResponse.builder()
                     .available(false)
-                    .reason("充电桩当前状态为：" + getChargingPileStatusDesc(chargingPile.getStatus()))
+                    .reason("充电桩当前状态不可预约：" + getChargingPileStatusDesc(chargingPile.getStatus()))
                     .build();
         }
 
-        // 3. 检查时间段是否有冲突的预约
         List<Reservation> conflictReservations = reservationRepository
                 .findByChargingPileIdAndStatusAndEndTimeAfter(pileId, ReservationStatus.PENDING, startTime);
 
-        // 过滤出真正冲突的预约（时间段有重叠）
         List<Reservation> actualConflicts = conflictReservations.stream()
                 .filter(r -> isTimeOverlap(startTime, endTime, r.getStartTime(), r.getEndTime()))
                 .toList();
@@ -354,27 +266,167 @@ public class ReservationServiceImpl implements ReservationService {
                     .build();
         }
 
-        // 4. 可用
         return AvailabilityCheckResponse.builder()
                 .available(true)
-                .reason("充电桩可用")
+                .reason("充电桩可预约")
                 .build();
     }
 
-    /**
-     * 判断两个时间段是否重叠
-     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservationResponse> getAdminReservations(Long userId, Long chargingPileId,
+                                                          ReservationStatus status,
+                                                          LocalDate startDate, LocalDate endDate,
+                                                          Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "startTime"));
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.plusDays(1).atStartOfDay() : null;
+
+        Page<Reservation> reservationPage = reservationRepository.findByAdminFilters(
+                userId, chargingPileId, status, startDateTime, endDateTime, pageable);
+
+        Map<Long, ChargingPile> pileMap = batchFetchPiles(reservationPage.getContent());
+        Map<Long, User> userMap = batchFetchUsers(reservationPage.getContent());
+
+        List<ReservationResponse> responses = reservationPage.getContent().stream()
+                .map(reservation -> buildReservationResponse(
+                        reservation,
+                        pileMap.get(reservation.getChargingPileId()),
+                        userMap.get(reservation.getUserId())))
+                .toList();
+
+        return new PageImpl<>(responses, pageable, reservationPage.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationResponse getAdminReservationById(Long id) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND));
+
+        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId()).orElse(null);
+        User user = userRepository.findById(reservation.getUserId()).orElse(null);
+
+        return buildReservationResponse(reservation, chargingPile, user);
+    }
+
+    @Override
+    @Transactional
+    public void cancelReservationByAdmin(Long id) {
+        log.info("Cancel reservation by admin: reservationId={}", id);
+
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ResultCode.NOT_FOUND));
+
+        cancelPendingReservation(reservation);
+    }
+
+    private void cancelPendingReservation(Reservation reservation) {
+        if (reservation.getStatus() != ReservationStatus.PENDING) {
+            throw new BusinessException(ResultCode.RESERVATION_CANNOT_CANCEL);
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservationRepository.save(reservation);
+
+        ChargingPile chargingPile = chargingPileRepository.findById(reservation.getChargingPileId())
+                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
+        if (chargingPile.getStatus() == ChargingPileStatus.RESERVED) {
+            chargingPile.setStatus(ChargingPileStatus.IDLE);
+            chargingPileRepository.save(chargingPile);
+        }
+    }
+
+    private Map<Long, ChargingPile> batchFetchPiles(List<Reservation> reservations) {
+        if (reservations == null || reservations.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> pileIds = reservations.stream()
+                .map(Reservation::getChargingPileId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (pileIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return chargingPileRepository.findAllById(pileIds).stream()
+                .collect(Collectors.toMap(ChargingPile::getId, pile -> pile));
+    }
+
+    private Map<Long, User> batchFetchUsers(List<Reservation> reservations) {
+        if (reservations == null || reservations.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> userIds = reservations.stream()
+                .map(Reservation::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+    }
+
+    private ReservationResponse buildReservationResponse(Reservation reservation, ChargingPile chargingPile, User user) {
+        ReservationResponse.ReservationResponseBuilder builder = ReservationResponse.builder()
+                .id(reservation.getId())
+                .userId(reservation.getUserId())
+                .username(user != null ? user.getUsername() : null)
+                .nickname(user != null ? user.getNickname() : null)
+                .chargingPileId(reservation.getChargingPileId())
+                .startTime(reservation.getStartTime())
+                .endTime(reservation.getEndTime())
+                .status(reservation.getStatus())
+                .statusDesc(getStatusDesc(reservation.getStatus()))
+                .createdTime(reservation.getCreatedTime())
+                .updatedTime(reservation.getUpdatedTime());
+
+        if (chargingPile != null) {
+            builder.chargingPileCode(chargingPile.getCode())
+                    .chargingPileLocation(chargingPile.getLocation())
+                    .chargingPileLng(chargingPile.getLng())
+                    .chargingPileLat(chargingPile.getLat())
+                    .chargingPileType(chargingPile.getType().name())
+                    .chargingPileTypeDesc(getTypeDesc(chargingPile.getType().name()))
+                    .chargingPilePower(chargingPile.getPower());
+        }
+
+        if (reservation.getStatus() == ReservationStatus.PENDING) {
+            long remainingMinutes = Duration.between(LocalDateTime.now(), reservation.getEndTime()).toMinutes();
+            builder.remainingMinutes(Math.max(0, remainingMinutes));
+        }
+
+        return builder.build();
+    }
+
+    private String getStatusDesc(ReservationStatus status) {
+        return switch (status) {
+            case PENDING -> "待使用";
+            case COMPLETED -> "已完成";
+            case CANCELLED -> "已取消";
+            case EXPIRED -> "已过期";
+        };
+    }
+
+    private String getTypeDesc(String type) {
+        return switch (type) {
+            case "AC" -> "交流桩";
+            case "DC" -> "直流桩";
+            default -> type;
+        };
+    }
+
     private boolean isTimeOverlap(LocalDateTime start1, LocalDateTime end1,
-                                   LocalDateTime start2, LocalDateTime end2) {
-        // 时间段1: [start1, end1]
-        // 时间段2: [start2, end2]
-        // 重叠条件: start1 < end2 && start2 < end1
+                                  LocalDateTime start2, LocalDateTime end2) {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
-    /**
-     * 获取充电桩状态描述
-     */
     private String getChargingPileStatusDesc(ChargingPileStatus status) {
         return switch (status) {
             case IDLE -> "空闲";

@@ -34,6 +34,18 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
+      path: '/reservations',
+      name: 'reservation-list',
+      component: () => import('../views/admin/ReservationList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/reservations/:id',
+      name: 'reservation-detail',
+      component: () => import('../views/admin/ReservationDetail.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/charging-records',
       name: 'charging-record-list',
       component: () => import('../views/admin/ChargingRecordList.vue'),

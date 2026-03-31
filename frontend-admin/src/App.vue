@@ -20,9 +20,10 @@ const handleLogout = async () => {
   <div class="app-container">
     <header v-if="isLoggedIn" class="app-header">
       <div class="header-content">
-        <div class="logo">智能充电管理后台</div>
+        <div class="logo">智能充电后台管理系统</div>
         <nav class="nav">
           <RouterLink to="/price-config">价格配置</RouterLink>
+          <RouterLink to="/reservations">预约管理</RouterLink>
           <RouterLink to="/charging-records">充电记录</RouterLink>
           <RouterLink to="/users">用户管理</RouterLink>
           <RouterLink to="/fault-reports">故障报修</RouterLink>

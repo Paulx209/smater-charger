@@ -2,7 +2,7 @@
 
 ## 作用
 
-本文件用于在新会话中快速恢复项目上下文。
+本文档用于在新会话中快速恢复项目上下文。
 重点包括：
 
 - 当前项目真实状态
@@ -14,13 +14,10 @@
 
 ## 项目上下文
 
-- 仓库路径：`C:\java-project\smart-charger`
-- 最高规则：以代码为准，不以旧文档为准。
-- 当前协作方式：
-  1. 先识别代码现状
-  2. 再确认模块边界
-  3. 再建立或更新 OpenSpec change
-  4. 最后按 change 实现和回写文档
+- 项目路径：`C:\java-project\smart-charger`
+- 协作基线：一律以代码现状为准，不以旧文档为准
+- 推进方式：按一级业务模块推进
+- 工作顺序：先识别现状和边界，再建立 OpenSpec change，再实现，再回写文档
 
 ## 新会话必须先读的文件
 
@@ -32,12 +29,7 @@
 
 ## 已完成工作
 
-### 1. 项目基线重建
-
-- 已按一级业务模块完成代码优先重识别。
-- 已建立新的模块基线和盘点文档。
-
-### 2. 已完成的关键 change
+### 已完成的 OpenSpec change
 
 - `announcement-contract-alignment`
 - `fault-report-contract-alignment`
@@ -46,64 +38,66 @@
 - `announcement-store-response-alignment`
 - `statistics-response-alignment`
 - `price-config-boundary-alignment`
+- `reservation-admin-console`
 
-## 当前项目状态
+### 当前项目状态
 
-### 已闭环模块
+#### 已闭环模块
 
 - 用户认证
 - 用户管理
 - 充电桩
+- 预约
 - 充电记录
 - 公告
 - 价格配置
 - 故障报修
 
-### 仍有缺口的模块
+#### 仍有缺口的模块
 
-- 预约：管理端能力不足
-- 预警通知：管理端能力不足
-- 车辆：后台能力尚未建设，是否需要待确认
+- 预警通知：缺管理端能力
+- 车辆：后台是否需要独立管理端能力仍待确认
 
-### 仍有工程问题的区域
+#### 工程层剩余问题
 
-- `frontend-client` 中仍有一批历史 TypeScript 问题
-- 这些问题主要分布在公告、预约、充电记录和测试残留，不应与已完成的模块闭环混淆
+- `frontend-client` 还残留部分历史 TypeScript 问题
+- 这些问题主要分布在公告、预约、充电记录和测试残留，不应与已闭环模块混淆
 
 ## 当前推荐下一步
 
-优先推荐：
+首选：
 
-- `reservation-admin-console`
+- `warning-notice-admin-alignment`
 
 原因：
 
-- 后端和用户端预约能力已经存在
-- 管理端缺口清晰
-- 适合继续按小颗粒度推进
+- 后端和用户端相关能力已存在
+- 缺口主要集中在管理端
+- 边界与预约管理端控制台这轮很接近，适合继续用同样的小颗粒度模式推进
 
 备选：
 
-- `warning-notice-admin-alignment`
 - `client-announcement-response-alignment`
+- 车辆模块后台能力再识别
 
 ## 下一会话协作规则
 
-- 不要从旧需求文档重新开始。
-- 不要把旧路线图当作事实来源。
-- 一个 change 只覆盖一个明确能力点。
-- 优先按模块推进，不按目录推进。
-- 在开始实现前，先说明当前代码状态和这轮边界。
+- 继续坚持代码优先，不以旧计划为准
+- 一个 change 只覆盖一个明确能力点
+- 不要直接跳进写代码，要先确认边界
+- 改完代码后必须同步更新基线文档、总盘点文档和 change 任务状态
 
-## 当前远程状态
+## 当前验证结论
 
-- 当前分支：`master`
-- 远程：`origin`
-- 最新已推送提交：`e9f5199`
+本轮最新结果：
+
+- `backend` 的 `mvn.cmd -q -DskipTests compile` 通过
+- `frontend-admin` 的 `npm.cmd run type-check` 通过
+- 预约模块管理端控制台已补齐并通过静态校验
 
 ## 新会话推荐首条任务
 
-1. 读取本文件和模块基线文档
+1. 先读取上述上下文文件
 2. 用简洁中文总结当前项目状态
-3. 确认下一优先模块
-4. 再开始新的 OpenSpec change
+3. 继续从 `warning-notice-admin-alignment` 开始下一轮识别与设计
+4. 在未确认边界前不要直接写代码
