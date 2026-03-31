@@ -1,1 +1,11 @@
 .ace-tool/
+
+# Local Codex/Claude workspace artifacts
+.codex/
+.tmp/
+.tmp_start_charging_lock.patch
+backend/.claude/
+backend/.codex/
+frontend-admin/.codex/
+frontend-client/.claude/
+frontend-client/.codex/
