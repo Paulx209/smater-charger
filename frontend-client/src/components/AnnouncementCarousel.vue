@@ -26,7 +26,7 @@
       <el-icon :size="40" color="#909399">
         <Bell />
       </el-icon>
-      <p>暂无系统公告</p>
+      <p>暂无公告</p>
     </div>
   </el-card>
 </template>
@@ -40,25 +40,21 @@ import { stripHtmlAndTruncate, type AnnouncementClientInfo } from '@/types/annou
 
 const router = useRouter()
 const announcementStore = useAnnouncementStore()
-
 const announcements = ref<AnnouncementClientInfo[]>([])
 
-// 点击公告
 const handleClick = (id: number) => {
   router.push(`/announcement/${id}`)
 }
 
-// 加载最新公告
 const loadLatestAnnouncements = async () => {
   try {
     const result = await announcementStore.fetchLatestAnnouncements(3)
     announcements.value = result
   } catch (error) {
-    console.error('加载最新公告失败:', error)
+    console.error('Failed to load latest announcements:', error)
   }
 }
 
-// 组件挂载时加载数据
 onMounted(() => {
   loadLatestAnnouncements()
 })

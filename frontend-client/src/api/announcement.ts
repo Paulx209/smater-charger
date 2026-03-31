@@ -5,33 +5,19 @@ import type {
 } from '@/types/announcement'
 
 /**
- * 系统公告API
+ * 客户端公告 API
  */
 
-// ==================== 车主端接口 ====================
-
-// 查询公告列表（车主端）
 export const getAnnouncementList = (params?: { page?: number; size?: number }) => {
-  return request<AnnouncementClientListResponse>({
-    url: '/announcement',
-    method: 'get',
-    params
-  })
+  return request.get<AnnouncementClientListResponse, AnnouncementClientListResponse>('/announcement', { params })
 }
 
-// 查询公告详情（车主端）
 export const getAnnouncementDetail = (id: number) => {
-  return request<AnnouncementClientInfo>({
-    url: `/announcement/${id}`,
-    method: 'get'
-  })
+  return request.get<AnnouncementClientInfo, AnnouncementClientInfo>(`/announcement/${id}`)
 }
 
-// 查询最新公告（车主端）
 export const getLatestAnnouncements = (limit: number = 3) => {
-  return request<AnnouncementClientInfo[]>({
-    url: '/announcement/latest',
-    method: 'get',
+  return request.get<AnnouncementClientInfo[], AnnouncementClientInfo[]>('/announcement/latest', {
     params: { limit }
   })
 }

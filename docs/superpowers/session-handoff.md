@@ -28,6 +28,7 @@
 - `price-config-boundary-alignment`
 - `reservation-admin-console`
 - `warning-notice-admin-alignment`
+- `client-announcement-response-alignment`
 
 ## 当前项目状态
 
@@ -50,30 +51,30 @@
 
 ### 当前工程问题
 
-- `frontend-client` 仍有一批历史 TypeScript 报错，属于工程清理问题，不等于业务功能缺失。
+- `frontend-client` 仍有一批历史 TypeScript 报错，当前主要集中在预约、充电记录和测试残留。
 - 旧文档与部分旧 change 需要后续归档，但当前主业务闭环已基本建立。
 
 ## 最近一次完成的工作
 
-### 2026-03-31 预警通知管理端对齐
+### 2026-03-31 客户端公告响应类型对齐
 
-本轮完成了 `warning-notice-admin-alignment`：
+本轮完成了 `client-announcement-response-alignment`：
 
-- 后端新增 `/admin/warning-notices` 列表、详情、批量已读、删除、全局阈值接口
-- `frontend-admin` 新增预警通知列表、详情、阈值设置页以及导航入口
-- 后端编译通过，`frontend-admin` 类型检查通过
-- 模块基线、任务清单和本交接文档已同步更新
+- `frontend-client` 公告 API 改成显式返回解包后的业务数据
+- 公告 store 与首页公告轮播的响应类型已对齐
+- 顺手修复了 `warningNotice` store 的一个确定性空值访问问题
+- `frontend-client` 类型检查中，公告相关错误已清零
 
 ## 下一步建议
 
 ### P0
 
-- `client-announcement-response-alignment`
+- `frontend-client` 预约与充电记录类型清理
 
 ### P1
 
-- `frontend-client` 历史 TypeScript 问题按模块清理
 - 车辆模块管理端边界识别
+- 测试残留清理
 
 ## 恢复工作提示词
 

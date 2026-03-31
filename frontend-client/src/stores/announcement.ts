@@ -6,12 +6,9 @@ import {
   getAnnouncementDetail,
   getLatestAnnouncements
 } from '@/api/announcement'
-import type {
-  AnnouncementClientInfo,
-} from '@/types/announcement'
+import type { AnnouncementClientInfo } from '@/types/announcement'
 
 export const useAnnouncementStore = defineStore('announcement', () => {
-  // 状态
   const loading = ref(false)
   const clientAnnouncements = ref<AnnouncementClientInfo[]>([])
   const latestAnnouncements = ref<AnnouncementClientInfo[]>([])
@@ -20,9 +17,6 @@ export const useAnnouncementStore = defineStore('announcement', () => {
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  // ==================== 车主端方法 ====================
-
-  // 获取车主端公告列表
   const fetchClientAnnouncementList = async (params?: { page?: number; size?: number }) => {
     try {
       loading.value = true
@@ -38,15 +32,14 @@ export const useAnnouncementStore = defineStore('announcement', () => {
       pageSize.value = result.size
       return result
     } catch (error) {
-      console.error('获取车主端公告列表失败:', error)
-      ElMessage.error('获取公告列表失败')
+      console.error('Failed to fetch client announcement list:', error)
+      ElMessage.error('加载公告列表失败')
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  // 获取车主端公告详情
   const fetchClientAnnouncementDetail = async (id: number) => {
     try {
       loading.value = true
@@ -54,27 +47,25 @@ export const useAnnouncementStore = defineStore('announcement', () => {
       currentAnnouncement.value = result
       return result
     } catch (error) {
-      console.error('获取车主端公告详情失败:', error)
-      ElMessage.error('获取公告详情失败')
+      console.error('Failed to fetch client announcement detail:', error)
+      ElMessage.error('加载公告详情失败')
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  // 获取最新公告
   const fetchLatestAnnouncements = async (limit: number = 3) => {
     try {
       const result = await getLatestAnnouncements(limit)
       latestAnnouncements.value = result
       return result
     } catch (error) {
-      console.error('获取最新公告失败:', error)
+      console.error('Failed to fetch latest announcements:', error)
       throw error
     }
   }
 
-  // 重置状态
   const reset = () => {
     clientAnnouncements.value = []
     latestAnnouncements.value = []
@@ -85,7 +76,6 @@ export const useAnnouncementStore = defineStore('announcement', () => {
   }
 
   return {
-    // 状态
     loading,
     clientAnnouncements,
     latestAnnouncements,
@@ -93,13 +83,9 @@ export const useAnnouncementStore = defineStore('announcement', () => {
     total,
     currentPage,
     pageSize,
-
-    // 车主端方法
     fetchClientAnnouncementList,
     fetchClientAnnouncementDetail,
     fetchLatestAnnouncements,
-
-    // 工具方法
     reset
   }
 })
