@@ -2,7 +2,9 @@ package com.smartcharger.service;
 
 import com.smartcharger.dto.request.VehicleCreateRequest;
 import com.smartcharger.dto.request.VehicleUpdateRequest;
+import com.smartcharger.dto.response.AdminVehicleResponse;
 import com.smartcharger.dto.response.VehicleResponse;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -40,4 +42,10 @@ public interface VehicleService {
      * 设置默认车辆
      */
     void setDefaultVehicle(Long userId, Long id);
+
+    Page<AdminVehicleResponse> getAdminVehicles(Long userId, String licensePlate, Integer page, Integer size);
+
+    AdminVehicleResponse getAdminVehicleById(Long id);
+
+    void deleteVehicleByAdmin(Long id);
 }

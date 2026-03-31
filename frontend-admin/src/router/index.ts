@@ -118,6 +118,18 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
+      path: '/vehicles',
+      name: 'vehicle-list',
+      component: () => import('../views/admin/VehicleList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/vehicles/:id',
+      name: 'vehicle-detail',
+      component: () => import('../views/admin/VehicleDetail.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/statistics',
       name: 'statistics-dashboard',
       component: () => import('../views/admin/StatisticsDashboard.vue'),

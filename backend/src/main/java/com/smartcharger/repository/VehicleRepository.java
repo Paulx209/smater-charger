@@ -1,6 +1,8 @@
 package com.smartcharger.repository;
 
 import com.smartcharger.entity.Vehicle;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,6 +32,14 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
      * 查询用户的默认车辆
      */
     Optional<Vehicle> findByUserIdAndIsDefault(Long userId, Integer isDefault);
+
+    @Query("SELECT v FROM Vehicle v WHERE " +
+            "(:userId IS NULL OR v.userId = :userId) AND " +
+            "(:licensePlate IS NULL OR v.licensePlate LIKE %:licensePlate%) " +
+            "ORDER BY v.createdTime DESC")
+    Page<Vehicle> findByAdminFilters(@Param("userId") Long userId,
+                                     @Param("licensePlate") String licensePlate,
+                                     Pageable pageable);
 
     /**
      * 检查车牌号是否存在（同一用户下）

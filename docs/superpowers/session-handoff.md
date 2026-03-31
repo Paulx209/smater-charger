@@ -1,23 +1,15 @@
-# 会话交接文档
+﻿# 项目交接文档
 
 ## 当前协作规则
 
 - 工作目录：`C:\java-project\smart-charger`
-- 以代码实现为准，不以旧文档为准。
-- 按一级业务模块推进。
-- 先识别现状和边界，再补 OpenSpec change，再实现代码。
-- 一个 change 只覆盖一个明确能力点，尽量保持小颗粒度提交。
-- Git 提交与推送默认使用中文说明。
+- 以代码现状为唯一基线，不以旧文档为基线
+- 按一级业务模块推进
+- 一个 change 只覆盖一个明确能力点
+- 优先做小颗粒度、可独立回滚的提交
+- Git 提交信息使用中文
 
-## 关键上下文文件
-
-1. `接口文档设计/待实现功能清单.md`
-2. `docs/superpowers/specs/2026-03-30-project-module-baseline.md`
-3. `docs/superpowers/specs/2026-03-30-openspec-codex-collaboration-design.md`
-4. `docs/superpowers/plans/2026-03-30-project-reidentification-plan.md`
-5. 已完成 change 下的 `proposal.md / design.md / tasks.md`
-
-## 已完成的 OpenSpec change
+## 已完成的模块治理
 
 - `announcement-contract-alignment`
 - `fault-report-contract-alignment`
@@ -29,54 +21,54 @@
 - `reservation-admin-console`
 - `warning-notice-admin-alignment`
 - `client-announcement-response-alignment`
+- `client-type-check-cleanup`
+- `vehicle-admin-console`
 
-## 当前项目状态
+## 当前模块状态
 
-### 已闭环模块
+### 已形成闭环
 
 - 用户认证
 - 用户管理
 - 充电桩
+- 车辆
 - 预约
 - 充电记录
 - 公告
 - 价格配置
 - 故障报修
 - 预警通知
-- 统计
+- 统计分析
 
-### 部分实现模块
+### 当前结论
 
-- 车辆模块：用户侧主流程已具备，但管理端边界仍需单独识别。
+- `backend` 编译通过
+- `frontend-admin` type-check 通过
+- `frontend-client` type-check 通过
+- 车辆模块现已补齐管理端列表、详情、删除能力
 
-### 当前工程问题
+## 最新完成事项
 
-- `frontend-client` 仍有一批历史 TypeScript 报错，当前主要集中在预约、充电记录和测试残留。
-- 旧文档与部分旧 change 需要后续归档，但当前主业务闭环已基本建立。
+### 2026-03-31 `vehicle-admin-console`
 
-## 最近一次完成的工作
-
-### 2026-03-31 客户端公告响应类型对齐
-
-本轮完成了 `client-announcement-response-alignment`：
-
-- `frontend-client` 公告 API 改成显式返回解包后的业务数据
-- 公告 store 与首页公告轮播的响应类型已对齐
-- 顺手修复了 `warningNotice` store 的一个确定性空值访问问题
-- `frontend-client` 类型检查中，公告相关错误已清零
+- 后端新增 `/admin/vehicles` 管理接口
+- `frontend-admin` 新增车辆列表页和详情页
+- 支持按用户 ID、车牌号筛选
+- 支持管理员删除车辆
+- 删除默认车辆时保留默认车自动补位语义
 
 ## 下一步建议
 
-### P0
-
-- `frontend-client` 预约与充电记录类型清理
-
 ### P1
 
-- 车辆模块管理端边界识别
-- 测试残留清理
+- 对已完成 change 做归档收尾
+- 视需要补一轮全仓库联调验证
 
-## 恢复工作提示词
+### P2
+
+- 如果要继续扩展车辆模块，再单独评估是否需要管理员设置默认车辆
+
+## 新会话提示词
 
 ```text
 继续 C:\java-project\smart-charger 项目开发。
@@ -91,19 +83,8 @@
 协作规则：
 - 以代码为准，不以旧文档为准
 - 按一级业务模块推进
-- 先识别现状和边界，再做 OpenSpec change，再实现
 - 一个 change 只覆盖一个明确能力点
-- Git 提交与推送默认使用中文说明
+- Git 提交信息使用中文
 
-读取完成后，请先：
-1. 用简洁中文总结当前项目状态
-2. 说明你理解的协作规则
-3. 给出下一个优先模块建议
-4. 暂时不要直接写代码
+读取完成后先总结当前项目状态，再给出下一步建议。
 ```
-## 2026-03-31 新增记录：client-type-check-cleanup
-
-- 已完成 rontend-client 的一轮小颗粒度类型清理。
-- 本轮收口了充电记录页面、预约创建导入、价格估算请求类型、Element Plus MessageBox 选项补丁，以及孤立测试残留。
-- 当前 rontend-client 的 
-pm.cmd run type-check 已通过。
