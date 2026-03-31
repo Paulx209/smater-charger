@@ -23,4 +23,5 @@
 
 - [x] 4.1 更新 OpenSpec tasks 状态
 - [x] 4.2 更新项目总览、模块基线、session handoff
-- [ ] 4.3 提交为中文 commit
+- [x] 4.3 提交为中文 commit
+
