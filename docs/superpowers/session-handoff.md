@@ -88,3 +88,10 @@
 
 读取完成后先总结当前项目状态，再给出下一步建议。
 ```
+
+## 2026-03-31 全仓库冒烟验证
+
+- `backend`: `mvn.cmd -q -DskipTests compile` 通过
+- `frontend-admin`: `npm.cmd run build` 通过
+- `frontend-client`: `npm.cmd run build` 通过
+- 两个前端构建均存在 Vite 大包告警，但不影响构建成功

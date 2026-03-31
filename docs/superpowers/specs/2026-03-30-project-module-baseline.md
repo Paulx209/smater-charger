@@ -42,4 +42,11 @@
 - `backend` 编译通过
 - `frontend-admin` type-check 通过
 - `frontend-client` type-check 通过
-- 当前主线缺口已经从“功能未实现”转向“归档收尾与联调验证”
+- 当前主线缺口已经从“功能未实现”转向“仓库卫生清理与持续验收”
+
+## 2026-03-31 全仓库冒烟验证
+
+- `backend` 编译通过
+- `frontend-admin` build 通过
+- `frontend-client` build 通过
+- 当前未发现新的阻塞性构建错误
