@@ -7,7 +7,7 @@ export enum ChargingRecordStatus {
 }
 
 // 充电记录状态文本映射
-export const ChargingRecordStatusText: Record<ChargingRecordStatus, string> = {
+export const ChargingRecordStatusText: Record<string, string> = {
   [ChargingRecordStatus.CHARGING]: '充电中',
   [ChargingRecordStatus.COMPLETED]: '已完成',
   [ChargingRecordStatus.CANCELLED]: '已取消',
@@ -15,7 +15,7 @@ export const ChargingRecordStatusText: Record<ChargingRecordStatus, string> = {
 }
 
 // 充电记录状态颜色映射
-export const ChargingRecordStatusColor: Record<ChargingRecordStatus, string> = {
+export const ChargingRecordStatusColor: Record<string, string> = {
   [ChargingRecordStatus.CHARGING]: 'warning',
   [ChargingRecordStatus.COMPLETED]: 'success',
   [ChargingRecordStatus.CANCELLED]: 'info',

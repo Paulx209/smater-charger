@@ -246,7 +246,7 @@ const loadStatistics = async () => {
     }
   } catch (err: any) {
     error.value = err.message || '加载统计数据失败，请稍后重试'
-    ElMessage.error(error.value)
+    ElMessage.error(error.value ?? '加载充电统计失败')
   } finally {
     loading.value = false
   }

@@ -13,7 +13,7 @@ export const ChargingPileTypeText: Record<ChargingPileType, string> = {
 // 费用配置信息接口
 export interface PriceConfigInfo {
   id: number
-  chargingPileType: ChargingPileType
+  chargingPileType: ChargingPileType | string
   pricePerKwh: number          // 每度电价格
   serviceFee: number           // 服务费
   startTime?: string           // 生效开始时间
@@ -25,7 +25,7 @@ export interface PriceConfigInfo {
 
 // 创建费用配置请求
 export interface PriceConfigCreateRequest {
-  chargingPileType: ChargingPileType
+  chargingPileType: ChargingPileType | string
   pricePerKwh: number
   serviceFee: number
   startTime?: string
@@ -59,7 +59,7 @@ export interface PriceConfigListResponse {
 
 // 费用预估请求
 export interface PriceEstimateRequest {
-  chargingPileType: ChargingPileType
+  chargingPileType: ChargingPileType | string
   electricQuantity: number
 }
 

@@ -101,3 +101,9 @@
 3. 给出下一个优先模块建议
 4. 暂时不要直接写代码
 ```
+## 2026-03-31 新增记录：client-type-check-cleanup
+
+- 已完成 rontend-client 的一轮小颗粒度类型清理。
+- 本轮收口了充电记录页面、预约创建导入、价格估算请求类型、Element Plus MessageBox 选项补丁，以及孤立测试残留。
+- 当前 rontend-client 的 
+pm.cmd run type-check 已通过。

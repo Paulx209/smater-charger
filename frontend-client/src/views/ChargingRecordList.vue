@@ -291,7 +291,7 @@ const handleFilter = async () => {
     })
   } catch (err: any) {
     error.value = err.message || '查询失败，请稍后重试'
-    ElMessage.error(error.value)
+    ElMessage.error(error.value ?? '加载充电记录失败')
   }
 }
 
