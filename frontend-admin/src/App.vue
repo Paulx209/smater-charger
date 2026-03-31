@@ -27,8 +27,9 @@ const handleLogout = async () => {
           <RouterLink to="/charging-records">充电记录</RouterLink>
           <RouterLink to="/users">用户管理</RouterLink>
           <RouterLink to="/fault-reports">故障报修</RouterLink>
+          <RouterLink to="/warning-notices">预警通知</RouterLink>
           <RouterLink to="/announcement">公告管理</RouterLink>
-          <RouterLink to="/statistics">统计看板</RouterLink>
+          <RouterLink to="/statistics">统计分析</RouterLink>
         </nav>
         <div class="header-right">
           <div class="user-info">
@@ -61,7 +62,7 @@ const handleLogout = async () => {
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
   min-height: 60px;

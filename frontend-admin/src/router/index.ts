@@ -94,6 +94,24 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
+      path: '/warning-notices',
+      name: 'warning-notice-list',
+      component: () => import('../views/admin/WarningNoticeList.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/warning-notices/settings',
+      name: 'warning-notice-settings',
+      component: () => import('../views/admin/WarningNoticeSettings.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/warning-notices/:id',
+      name: 'warning-notice-detail',
+      component: () => import('../views/admin/WarningNoticeDetail.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/users',
       name: 'user-management-list',
       component: () => import('../views/admin/UserManagementList.vue'),
