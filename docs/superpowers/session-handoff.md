@@ -1,164 +1,109 @@
-# Session Handoff
+# 会话交接文档
 
-## Purpose
+## 作用
 
-This file is the single handoff entry for a new Codex conversation.
-It summarizes the current project baseline, the collaboration rules already established, the completed changes, and the recommended next step.
+本文件用于在新会话中快速恢复项目上下文。
+重点包括：
 
-Last updated: 2026-03-30
+- 当前项目真实状态
+- 已建立的协作规则
+- 已完成的变更
+- 下一优先模块建议
 
-## Project Context
+最后更新时间：2026-03-31
 
-- Repository: `C:\java-project\smart-charger`
-- Primary rule: treat code as the source of truth, not old planning documents.
-- Collaboration mode already established:
-  - first identify actual code state
-  - then align module boundaries
-  - then create or update a narrow OpenSpec change
-  - then implement against that change
+## 项目上下文
 
-## Core Reference Files
+- 仓库路径：`C:\java-project\smart-charger`
+- 最高规则：以代码为准，不以旧文档为准。
+- 当前协作方式：
+  1. 先识别代码现状
+  2. 再确认模块边界
+  3. 再建立或更新 OpenSpec change
+  4. 最后按 change 实现和回写文档
 
-New sessions should read these files first:
+## 新会话必须先读的文件
 
 1. `接口文档设计/待实现功能清单.md`
 2. `docs/superpowers/specs/2026-03-30-project-module-baseline.md`
 3. `docs/superpowers/specs/2026-03-30-openspec-codex-collaboration-design.md`
 4. `docs/superpowers/plans/2026-03-30-project-reidentification-plan.md`
-5. `openspec/changes/announcement-contract-alignment/proposal.md`
-6. `openspec/changes/announcement-contract-alignment/design.md`
-7. `openspec/changes/announcement-contract-alignment/tasks.md`
-8. `openspec/changes/fault-report-contract-alignment/proposal.md`
-9. `openspec/changes/fault-report-contract-alignment/design.md`
-10. `openspec/changes/fault-report-contract-alignment/tasks.md`
+5. 已完成 change 的 `proposal.md / design.md / tasks.md`
 
-## Completed Work
+## 已完成工作
 
-### 1. Baseline Reset
+### 1. 项目基线重建
 
-- The project was re-identified module-by-module using code as the baseline.
-- The main inventory document was rewritten from a vague todo list into a code-first module inventory.
+- 已按一级业务模块完成代码优先重识别。
+- 已建立新的模块基线和盘点文档。
 
-Related docs:
-
-- `接口文档设计/待实现功能清单.md`
-- `docs/superpowers/specs/2026-03-30-project-module-baseline.md`
-
-### 2. Announcement Contract Alignment
-
-Completed change:
+### 2. 已完成的关键 change
 
 - `announcement-contract-alignment`
-
-Result:
-
-- fixed duplicated `/api` prefix problems
-- removed admin announcement capability from `frontend-client`
-- consolidated announcement admin capability into `frontend-admin`
-
-Relevant commit:
-
-- `a290240` `Align announcement contract and client boundary`
-
-### 3. Fault Report Contract Alignment
-
-Completed change:
-
 - `fault-report-contract-alignment`
+- `charging-record-admin-console-and-hardening`
+- `user-management-contract-alignment`
+- `announcement-store-response-alignment`
+- `statistics-response-alignment`
+- `price-config-boundary-alignment`
 
-Result:
+## 当前项目状态
 
-- client fault report API now aligns to backend real paths under `/fault-report`
-- removed fake client-side fields and assumptions such as `faultType`, image upload, and pseudo timeline fields
-- added admin fault report list, detail handling page, statistics page, routes, store, and navigation entry
-- updated OpenSpec and baseline docs after implementation
+### 已闭环模块
 
-Relevant commits:
+- 用户认证
+- 用户管理
+- 充电桩
+- 充电记录
+- 公告
+- 价格配置
+- 故障报修
 
-- `0c0e157` `Add fault report contract alignment design spec`
-- `197349b` `Add fault report contract alignment implementation plan`
-- `311bf94` `Align fault report contracts and admin UI`
+### 仍有缺口的模块
 
-## Current Baseline Judgment
+- 预约：管理端能力不足
+- 预警通知：管理端能力不足
+- 车辆：后台能力尚未建设，是否需要待确认
 
-The project is no longer mainly blocked by "missing modules".
-The main risks are:
+### 仍有工程问题的区域
 
-- historical document drift
-- contract drift between frontend and backend in some modules
-- old TypeScript errors in unrelated modules
-- some admin-side management capabilities still missing even when backend already exists
+- `frontend-client` 中仍有一批历史 TypeScript 问题
+- 这些问题主要分布在公告、预约、充电记录和测试残留，不应与已完成的模块闭环混淆
 
-Current important status:
+## 当前推荐下一步
 
-- announcement: aligned and closed
-- fault report: aligned and closed
-- user auth: closed
-- charging pile: closed
-- vehicles: client-side closed, admin-side not a priority yet
-- reservation: mostly closed on client/backend, admin-side management gap remains
-- charging record: backend and client exist, admin console gap remains
-- warning notice: backend and client exist, admin operations gap remains
-- price config: implemented, but client/admin boundary should still be kept clean
+优先推荐：
 
-## Known Validation Limitations
+- `reservation-admin-console`
 
-`npm.cmd run type-check` was executed for both frontends after fault-report alignment.
+原因：
 
-Result:
+- 后端和用户端预约能力已经存在
+- 管理端缺口清晰
+- 适合继续按小颗粒度推进
 
-- fault-report-specific new errors were cleared
-- repository-wide type-check still fails because of historical errors in other modules, mainly:
-  - announcement
-  - statistics
-  - user management
-  - reservation
-  - some existing component/type mismatches
+备选：
 
-This means new sessions should not treat current type-check failure as proof that the fault-report change is incomplete.
+- `warning-notice-admin-alignment`
+- `client-announcement-response-alignment`
 
-## Recommended Next Priority
+## 下一会话协作规则
 
-Recommended next module:
+- 不要从旧需求文档重新开始。
+- 不要把旧路线图当作事实来源。
+- 一个 change 只覆盖一个明确能力点。
+- 优先按模块推进，不按目录推进。
+- 在开始实现前，先说明当前代码状态和这轮边界。
 
-- `admin-charging-record-console`
+## 当前远程状态
 
-Reason:
+- 当前分支：`master`
+- 远程：`origin`
+- 最新已推送提交：`e9f5199`
 
-- backend capability already exists
-- it fits the established workflow well
-- it is a clean "backend already there, admin UI missing" gap
+## 新会话推荐首条任务
 
-Alternative next module:
-
-- cleanly separate any remaining price-config admin/client boundary issues
-
-## Working Rules For The Next Session
-
-- Do not restart from old requirement docs.
-- Do not treat old roadmap text as truth.
-- Keep changes narrow: one OpenSpec change should cover one clear capability area.
-- Continue using module-first planning rather than directory-first planning.
-- Before implementing a new module change, first summarize current code state and confirm the next target module.
-
-## Remote State
-
-- current branch during the last session: `master`
-- remote: `origin`
-- latest pushed commit at handoff time: `311bf94`
-
-## Resume Instruction
-
-If a new conversation starts, the first task should be:
-
-1. read the core reference files listed above
-2. summarize current project state in 1 short pass
-3. confirm the next target module
-4. only then create or update the next OpenSpec change
-## Update 2026-03-30: price-config-boundary-alignment
-
-- completed backend/frontend price-config boundary cleanup
-- backend management endpoints moved to `/admin/price-config`
-- `frontend-admin` remains the only management surface
-- `frontend-client` admin price-config routes and pages were removed
-- `frontend-client` now keeps only current-price lookup and fee estimation
+1. 读取本文件和模块基线文档
+2. 用简洁中文总结当前项目状态
+3. 确认下一优先模块
+4. 再开始新的 OpenSpec change

@@ -1,183 +1,112 @@
-# 妞ゅ湱娲板Ο鈥虫健閸╄櫣鍤庣拠鍡楀焼 Spec
+# 项目模块基线
 
-## 閻╊喚娈?
-鏉╂瑤鍞?spec 閻劍娼甸崶鍝勭暰瑜版挸澧犳い鍦窗閻ㄥ嫪鍞惍浣哥唨缁惧尅绱濈憴锝呭枀閳ユ粈鍞惍浣碘偓浣规＋閺傚洦銆傞妴涓眕enSpec 濠曞倻些閳ユ繄娈戦梻顕€顣介妴?
-鐎瑰啩绗夐幓蹇氬牚娑撯偓娑擃亝婀弶銉ュ閼虫枻绱濋懓灞炬Ц閹诲繗鍫ぐ鎾冲娴犳挸绨遍崷?`2026-03-30` 閻ㄥ嫮婀＄€圭偟濮搁幀渚婄礉閻劋绨崥搴ｇ敾閹碘偓閺?OpenSpec change 閻ㄥ嫯鎹ｉ悙骞库偓?
-## 閼煎啫娲?
-閺堫剚顐肩拠鍡楀焼鐟曞棛娲婃禒銉ょ瑓娑撯偓缁狙傜瑹閸斺剝膩閸ф绱?
-- 閻劍鍩涙稉搴ゎ吇鐠?- 鏉烇箒绶犵粻锛勬倞
-- 妫板嫮瀹崇粻锛勬倞
-- 閸忓懐鏁稿鈺冾吀閻?- 閸忓懐鏁哥拋鏉跨秿
-- 缁崵绮洪崗顒€鎲?- 鐠愬湱鏁ら柊宥囩枂
-- 閺佸懘娈伴幎銉ゆ叏
-- 妫板嫯顒熼柅姘辩叀
-- 缂佺喕顓告稉搴ｆ箙閺?
-鐎靛湱鍙庨懠鍐ㄦ纯閿?
-- `backend`
-- `frontend-admin`
-- `frontend-client`
-- `閹恒儱褰涢弬鍥ㄣ€傜拋鎹愵吀/`
-- `openspec/`
+## 文档说明
 
-## 閸掋倕鐣鹃崢鐔峰灟
+- 文档日期：2026-03-31
+- 基线原则：以当前代码现状为准，不以旧规划文档为准。
+- 用途：记录一级业务模块的实现状态、边界问题和下一步建议。
 
-1. 娴狅絿鐖滄导妯哄帥閿涘本鏋冨锝嗩偧娑?2. 閺堝鏋冩禒鏈电瑝缁涘绨鏌ユ４閻滎垽绱濊箛鍛淬€忛惇瀣熅閻究鈧焦甯撮崣锝冣偓涔籺ore閵嗕線銆夐棃銏″灗閹貉冨煑閸ｃ劍妲搁崥锕€鑸伴幋鎰版懠鐠?3. 閸撳秴鎮楃粩顖氱摠閸︺劍妲戦弰鎯ь殩缁撅箓鏁婃担宥嗘閿涘苯鍨界€规矮璐?`闁劌鍨庣€圭偟骞嘸閿涘矁鈧奔绗夐弰?`瀹告彃鐤勯悳鐧?4. OpenSpec 閸欘亞鏁ゆ禍搴℃倵缂侇厼褰夐弴纾嬵潐閸掓帪绱濇稉宥呭晙鐞氼偄缍嬫担婧锯偓婊冪秼閸撳秶閮寸紒鐔峰弿鐠ㄥ备鈧?
-## 濡€虫健閻樿埖鈧胶鐓╅梼?
-| 濡€虫健 | backend | frontend-admin | frontend-client | 缂佹捁顔?|
+## 当前总体判断
+
+当前项目已经不是“核心模块大量缺失”的状态。
+更准确的判断是：
+
+1. 大多数核心业务模块已经具备后端基础。
+2. 用户端主流程完成度整体较高。
+3. 当前主要工作集中在：
+   - 管理端缺口补齐
+   - 前后端契约对齐
+   - 历史工程问题清理
+
+## 一级模块状态
+
+| 模块 | backend | frontend-admin | frontend-client | 当前判断 |
 | --- | --- | --- | --- | --- |
-| 閻劍鍩涙稉搴ゎ吇鐠?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告煡妫撮悳?|
-| 鏉烇箒绶犵粻锛勬倞 | 瀹告彃鐤勯悳?| 閺堫亜鐤勯悳?| 瀹告彃鐤勯悳?| 鏉烇缚瀵屾笟褔妫撮悳?|
-| 妫板嫮瀹崇粻锛勬倞 | 瀹告彃鐤勯悳?| 闁劌鍨庣€圭偟骞?| 瀹告彃鐤勯悳?| 閸╃儤婀伴梻顓犲箚 |
-| 閸忓懐鏁稿鈺冾吀閻?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告煡妫撮悳?|
-| 閸忓懐鏁哥拋鏉跨秿 | 瀹告彃鐤勯悳?| 闁劌鍨庣€圭偟骞?| 瀹告彃鐤勯悳?| 鏉烇缚瀵屾笟褔妫撮悳顖ょ礉缁狅紕鎮婃笟褏宸遍崣?|
-| 缁崵绮洪崗顒€鎲?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 瀹告煡妫撮悳?|
-| 鐠愬湱鏁ら柊宥囩枂 | 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 闁劌鍨庣€圭偟骞?| 閸╃儤婀伴梻顓犲箚閿涘奔绲剧紒鎾寸€鍛暪閺?|
-| 閺佸懘娈伴幎銉ゆ叏 | 瀹告彃鐤勯悳?| 閺堫亜鐤勯悳?| 闁劌鍨庣€圭偟骞?| 閺堫亪妫撮悳?|
-| 妫板嫯顒熼柅姘辩叀 | 瀹告彃鐤勯悳?| 閺堫亜鐤勯悳?| 瀹告彃鐤勯悳?| 鏉烇缚瀵屾笟褔妫撮悳顖ょ礉缁狅紕鎮婃笟褏宸遍崣?|
-| 缂佺喕顓告稉搴ｆ箙閺?| 瀹告彃鐤勯悳?| 瀹告彃鐤勯悳?| 闁劌鍨庣€圭偟骞?| 缁狅紕鎮婃笟褔妫撮悳?|
+| 用户认证 | 已实现 | 不适用 | 已实现 | 已闭环 |
+| 用户管理 | 已实现 | 已实现 | 不适用 | 管理端契约已对齐，可用 |
+| 充电桩 | 已实现 | 已实现 | 已实现 | 已闭环 |
+| 车辆 | 已实现 | 未规划 | 已实现 | 用户端闭环，后台能力未建设 |
+| 预约 | 已实现 | 部分实现 | 已实现 | 用户端主流程已具备，管理端缺口明显 |
+| 充电记录 | 已实现 | 已实现 | 已实现 | 已闭环 |
+| 公告 | 已实现 | 已实现 | 已实现 | 已闭环，边界已清理 |
+| 价格配置 | 已实现 | 已实现 | 已实现 | 已闭环，admin/client 边界已清理 |
+| 故障报修 | 已实现 | 已实现 | 已实现 | 已闭环 |
+| 预警通知 | 已实现 | 部分实现 | 已实现 | 管理端能力仍不完整 |
+| 统计报表 | 已实现 | 已实现 | 不适用 | 管理端统计可用 |
 
-## 閸忔娊鏁崣鎴犲箛
+## 已完成的重要变更
 
-### 1. 閺冄勬瀮濡楋絽銇囬棃銏⑿濇潻鍥ㄦ
+### 1. 项目基线重识别
 
-閺冄呮畱 `閹恒儱褰涢弬鍥ㄣ€傜拋鎹愵吀/瀵板懎鐤勯悳鏉垮閼宠姤绔婚崡?md` 娑?`閹恒儱褰涢弬鍥ㄣ€傜拋鎹愵吀/瀵偓閸欐垼鐭剧痪鑳潐閸?md` 娴犲秵濡告禒銉ょ瑓濡€虫健鐟欏棔璐熼垾婊冪窡瀵偓閸欐垟鈧繐绱?
-- 鐠愬湱鏁ら柊宥囩枂
-- 閸忓懐鏁哥拋鏉跨秿
-- 妫板嫯顒熼柅姘辩叀
-- 閺佸懘娈伴幎銉ゆ叏
-- 閸忣剙鎲?- 閻劍鍩涚粻锛勬倞
-- 閺佺増宓佺紒鐔活吀
+- 以代码为准重新识别模块状态。
+- 将原本失真的待办文档改造成代码优先的盘点文档。
 
-娴ｅ棜绻栨禍娑櫮侀崸妤€婀禒锝囩垳娑擃厼鍑＄紒蹇撳弿闁劌鍤悳棰佺啊閸氬海顏€圭偟骞囬敍灞肩瑬閸忔湹鑵戞稉鈧柈銊ュ瀻瀹歌尙绮￠崗宄邦槵鐎瑰本鏆ｉ崜宥囶伂閼宠棄濮忛妴?
-### 2. 瑜版挸澧犻惇鐔割劀閻ㄥ嫰顥撻梽鈺€绗夐弰顖椻偓婊勭梾閸愭瑤鍞惍浣测偓婵撶礉閼板本妲搁垾婊堟４閻滎垯绗夐惇鐔风杽閳?
-閻╊喖澧犻弴缈犲紬闁插秶娈戦梻顕€顣芥稉宥嗘Ц缁岃櫣娅уΟ鈥虫健閿涘矁鈧本妲告禒銉ょ瑓娑撳琚崑蹇撴▕閿?
-- 閺冄勬瀮濡楋絼绮涢幐澶嗏偓婊勬弓鐎圭偟骞囬垾婵囧伎鏉╂澘鍑＄紒蹇撶摠閸︺劎娈戝Ο鈥虫健
-- 闁劌鍨庨崜宥囶伂閹恒儱褰涙總鎴犲娑撳骸鎮楃粩顖滄埂鐎圭偠鐭惧鍕瑝娑撯偓閼?- 缁狅紕鎮婄粩顖濆厴閸旀稒婀佹稉鈧柈銊ュ瀻鐞氼偅璐╅弨鎯ф躬鏉烇缚瀵岀粩顖氫紣缁嬪鑵?
-### 3. 缁崵绮洪崗顒€鎲″Ο鈥虫健閻ㄥ嫬顨栫痪锕傛６妫版ê鍑＄€瑰本鍨氶弽鈩冾劀
+### 2. 已完成的 OpenSpec change
 
-`announcement-contract-alignment` 瀹告彃鐣幋鎰簰娑撳鏁归弫娑崇窗
+- `announcement-contract-alignment`
+- `fault-report-contract-alignment`
+- `charging-record-admin-console-and-hardening`
+- `user-management-contract-alignment`
+- `announcement-store-response-alignment`
+- `statistics-response-alignment`
+- `price-config-boundary-alignment`
 
-- `frontend-admin` 娑?`frontend-client` 閻ㄥ嫬鍙曢崨?API 鐠侯垰绶炲鍙夋暭娑撻缚绁┃鎰熅瀵板嫸绱濇稉宥呭晙闁插秴顦查幏鍏煎复 `/api`
-- `frontend-client` 娑擃厽璐╅崗銉ф畱 `/admin/announcement` 鐠侯垳鏁辨稉搴ㄣ€夐棃銏犲嚒缁夊娅?- 缁狅紕鎮婇崗顒€鎲￠懗钘夊闁插秵鏌婇弨鑸垫殐閸?`frontend-admin`
+## 模块级结论
 
-瑜版挸澧犻崜鈺€缍戝銉ょ稊娑撳秴婀崗顒€鎲℃總鎴犲閺堫剝闊╅敍宀冣偓灞芥躬妞ゅ湱娲伴懠鍐ㄦ纯閸愬懎鍑￠張澶屾畱鐎涙﹢鍣虹猾璇茬€烽柨娆掝嚖閸滃苯鎮楃紒顓＄箥鐞涘本妞傞懕鏃囩殶閵?
-### 4. 閺佸懘娈伴幎銉ゆ叏濡€虫健鐎涙ê婀弰搴ｂ€樻總鎴犲闁挎瑤缍?
-鏉烇缚瀵岀粩顖涙櫊闂呮粍濮ゆ穱顔诲敩閻椒濞囬悽銊ф畱閺勵垽绱?
-- `/api/fault-reports`
-- `/api/fault-reports/my`
-- `/api/fault-reports/upload`
-- `/api/fault-reports/stats/pile/{id}`
+### 已闭环模块
 
-閼板苯缍嬮崜宥呮倵缁旑垱甯堕崚璺烘珤鐎圭偤妾弳鎾苟閻ㄥ嫭妲搁敍?
-- `/fault-report`
-- `/fault-report/admin/all`
-- `/fault-report/admin/{id}`
-- `/fault-report/admin/{id}/handle`
-- `/fault-report/admin/statistics`
+- 用户认证
+- 用户管理
+- 充电桩
+- 充电记录
+- 公告
+- 价格配置
+- 故障报修
 
-鏉╂瑨顕╅弰搴㈡櫊闂呮粍濮ゆ穱顔侥侀崸妤冩窗閸撳秳绗夐弰顖椻偓婊冨閼崇晫宸辨稉鈧悙鍏夆偓婵撶礉閼板本妲搁垾婊冾殩缁撅箒绻曞▽鈩冩箒缂佺喍绔撮垾婵勨偓?
-### 5. 鏉烇缚瀵岀粩顖涜穿閸忋儰绨＄粻锛勬倞閼宠棄濮?
-`frontend-client` 瑜版挸澧犻崠鍛儓閿?
-- `/admin/price-config`
-- `/admin/announcement`
+### 仍有明显缺口的模块
 
-鏉╂瑤绱伴柅鐘冲灇娴犮儰绗呴梻顕€顣介敍?
-- 缁狅紕鎮婇懗钘夊閸忋儱褰涢崚鍡樻殠
-- 濡€虫健鏉堝湱鏅稉宥嗙閺?- 閸氬海鐢?OpenSpec 娑撳秴顔愰弰鎾村瘻缁旑垱濯堕崚?
-## 鐎?OpenSpec 閻ㄥ嫬鍨介弬?
-瑜版挸澧犳禒鎾崇氨娑擃厽娓剁€瑰本鏆ｉ惃?change 閺勵垽绱?
-- `openspec/changes/charging-record-frontend`
+- 预约：缺管理端能力
+- 预警通知：缺管理端能力
+- 车辆：后台能力尚未建设，但是否需要仍待判断
 
-閸掋倕鐣鹃敍?
-- 鐠?change 娑撳簼鍞惍浣哄箛鐎圭偛鐔€閺堫兛绔撮懛杈剧礉鐠囧瓨妲戦崡鏇熌侀崸?OpenSpec 瀹搞儰缍斿ù浣规Ц閸欘垳鏁ら惃?- 娴ｅ棗鐣犳稉宥堝厴鐟曞棛娲婇弫缈犻嚋妞ゅ湱娲伴悳鎵Ц
-- 妞ゅ湱娲伴惄顔煎缂傚搫鐨垾婊€鍞惍浣哥唨缁惧灝鐪伴垾婵撶礉閹碘偓娴犮儲澧犵€佃壈鍤ч崥搴ｇ敾閺傚洦銆傜紒褏鐢绘径杈╂埂
+### 仍有工程清理空间的模块
 
-缂佹捁顔戦敍?
-- OpenSpec 缂佈呯敾娣囨繄鏆€
-- 娴ｅ棔绮犻悳鏉挎躬瀵偓婵绱濇禒璁崇秿閺?change 闁棄绻€妞よ缂撶粩瀣躬鏉╂瑤鍞ら崺铏瑰殠鐠囧棗鍩嗙紒鎾寸亯娑斿绗?
-## 閹恒劏宕橀惃鍕瑓娑撯偓濮?change
+- `frontend-client` 公告响应类型
+- `frontend-client` 预约、充电记录等历史 TypeScript 问题
+- 旧 `charging-record-frontend` change 的归档和收尾
 
-### 閹恒劏宕?1閿涙瓪fault-report-contract-alignment`
+## 当前优先级建议
 
-閼煎啫娲块敍?
-- 缂佺喍绔撮弫鍛存閹躲儰鎱ㄩ崜宥呮倵缁旑垵鐭惧鍕┾偓浣稿瀻妞ら潧鎷扮拠锔藉剰婵傛垹瀹?- 閸掔娀娅庨幋鏍夋鎰秼閸撳秴澧犵粩顖氫海鐠佸彞绲鹃崥搴ｎ伂娑撳秴鐡ㄩ崷銊ф畱閹恒儱褰?
-閸樼喎娲滈敍?
-- 瑜版挸澧犳稉宥嗘Ц缁?UI 缂傚搫褰涢敍宀冣偓灞炬Ц闁炬崘鐭剧€圭偤妾稉宥夆偓?
-### 閹恒劏宕?2閿涙瓪admin-charging-record-console`
+### P0
 
-閼煎啫娲块敍?
-- 閸╄桨绨鎻掔摠閸︺劎娈戦崥搴ｎ伂 `/charging-record/admin/all`
-- 瀵よ櫣鐝涚粻锛勬倞缁旑垳瀚粩瀣帠閻絻顔囪ぐ鏇€?
-閸樼喎娲滈敍?
-- 鐏炵偘绨崗绋跨€烽垾婊冩倵缁旑垳骞囬幋鎰┾偓浣侯吀閻炲棛顏紓鍝勫經閺勫海鈥橀垾婵堟畱濡€虫健
+- `reservation-admin-console`
+- `warning-notice-admin-alignment`
 
-## 鏉堟挸鍤紒鎾寸亯
+### P1
 
-閺堫剚顐肩拠鍡楀焼鐎瑰本鍨氶崥搴礉妞ゅ湱娲版惔鏂胯埌閹存劒绗佺仦鍌涙瀮濡楋絿绮ㄩ弸鍕剁窗
+- `client-announcement-response-alignment`
+- `frontend-client` 历史 TypeScript 问题按模块拆分清理
+- 车辆后台能力是否需要的再次识别
 
-1. 娴狅絿鐖滄禍瀣杽鐏?   - 閺?spec 閸滃本膩閸ф娲忛悙瑙勬瀮濡楋絾澹欓幏鍛扮箹鐏炲倽浜寸拹?2. 妞ゅ湱娲伴幀鏄忣潔鐏?   - `閹恒儱褰涢弬鍥ㄣ€傜拋鎹愵吀/瀵板懎鐤勯悳鏉垮閼宠姤绔婚崡?md`
-3. 閸欐ɑ娲跨憴鍕灊鐏?   - `openspec/changes/...`
+### P2
 
-閸氬海鐢婚崡蹇庣稊鐟欏嫬鍨敍?
-- 閸忓牏鈥樼拋銈喣侀崸妤€鐔€缁?- 閸愬秹鈧绔存稉顏吥侀崸?- 閸愬秴缂撶粩瀣╃娑擃亞鐛庨懠鍐ㄦ纯 change
-- 閺堚偓閸氬孩瀵?tasks 鐎圭偟骞?
+- 旧 change 归档
+- 持续回写项目基线和交接文档
 
-## 2026-03-30 閺佸懘娈伴幎銉ゆ叏鐎靛綊缍堢紒鎾寸亯鐞涖儱鍘?
-- `fault-report-contract-alignment` 瀹稿弶瀵滄禒锝囩垳鐎瑰本鍨氱€圭偟骞囬妴?- 閺佸懘娈伴幎銉ゆ叏濡€虫健閻㈡墎鈧粌鎮楃粩顖氬嚒鐎圭偟骞囬妴浣芥簠娑撹崵顏柈銊ュ瀻鐎圭偟骞囬妴浣侯吀閻炲棛顏張顏勭杽閻滄壋鈧繃娲块弬棰佽礋閳ユ粌澧犻崥搴ｎ伂闂傤厾骞嗙€瑰本鍨氶垾婵勨偓?- 鏉烇缚瀵岀粩顖滃箛瀹歌弓寮楅弽鐓庮嚠姒绘劕鎮楃粩顖滄埂鐎圭偞膩閸ㄥ绱伴崚娑樼紦鐠囬攱鐪版禒鍛絹娴?`chargingPileId + description`閿涘矁顕涢幆鍛瑢閸掓銆冩禒鍛Х鐠愮懓鎮楃粩顖濈箲閸ョ偛鐡у▓鐐光偓?- 缁狅紕鎮婄粩顖滃箛瀹告彃鍙挎径鍥ㄦ付鐏忓繐褰查悽銊╂４閻滎垽绱伴崚妤勩€冮妴浣虹摣闁鈧礁鍨庢い鐐光偓浣筋嚊閹懎顦╅悶鍡愨偓浣虹埠鐠侊繝銆夐妴?- 缁鐎峰Λ鈧弻銉╃崣鐠囦胶绮ㄩ弸婊勬▔缁€鐚寸礉閺?change 閻╃鍙ч惃鍕櫊闂呮粍濮ゆ穱顔藉Г闁挎瑥鍑″〒鍛存珟閿涙稑澧挎担娆忋亼鐠愩儵銆嶉弶銉ㄥ殰娴犳挸绨遍崗鏈电铂濡€虫健閻ㄥ嫬宸婚崣鏌ユ６妫版ǜ鈧?## 2026-03-30 Charging Record Module Update
+## 最近一次状态更新
 
-- Change completed: charging-record-admin-console-and-hardening
-- Code-first audit result: charging-record backend hardening was already present in code before this round, including start-charging locking, transactional split, and batch-fetch optimization on list paths.
-- This round closed the admin gap by adding:
-  - backend admin detail endpoint GET /charging-record/admin/{id}
-  - admin charging-record API/types/store
-  - admin charging-record list page
-  - admin charging-record detail page
-  - admin router and top navigation entry
-- Updated module interpretation:
-  - backend: implemented
-  - frontend-admin: implemented
-  - frontend-client: implemented
-- Validation note:
-  - mvn -q -DskipTests compile in backend passed
-  - npm.cmd run type-check in frontend-admin still reports historical errors in announcement, statistics, and user-management slices, but the new charging-record admin module did not add new TypeScript failures
-## 2026-03-30 User Management Contract Alignment Update
+### 2026-03-30：价格配置边界对齐完成
 
-- Change completed: `user-management-contract-alignment`
-- Scope completed:
-  - aligned admin user list, detail drawer, batch status dialog, and password reset dialog to one primary contract
-  - removed active-path dependence on legacy `types/userManagement.ts` shapes
-  - normalized status update and batch status update payloads to `{ status }` and `{ userIds, status }`
-- Validation result:
-  - user-management-specific `frontend-admin` type-check failures are cleared
-  - remaining `frontend-admin` failures are pre-existing and outside this change
+- 后端管理接口迁移到 `/admin/price-config`
+- 后端用户端只读接口保留 `/price-config/current` 和 `/price-config/estimate`
+- `frontend-admin` 继续作为唯一价格配置管理端
+- `frontend-client` 已移除管理员价格配置页面和路由
+- `frontend-client` 现在只保留当前价格读取和费用估算能力
+- 验证结果：`backend` 编译通过，`frontend-admin` 类型检查通过；`frontend-client` 仍有与价格配置无关的历史问题
 
-## 2026-03-30 Announcement Store Response Alignment Update
+## 关联文档
 
-- Change completed: `announcement-store-response-alignment`
-- Scope completed:
-  - aligned admin announcement API typings to the unwrapped request contract
-  - aligned announcement store pagination and detail loading to direct data models
-  - aligned announcement form and list rendering to the corrected admin models
-- Validation result:
-  - announcement-specific `frontend-admin` type-check failures are cleared
-  - remaining `frontend-admin` failures are pre-existing and outside this change
-
-## 2026-03-30 Statistics Response Alignment Update
-
-- Change completed: `statistics-response-alignment`
-- Scope completed:
-  - aligned statistics overview requests to direct data models
-  - aligned statistics export to raw blob handling that matches the backend binary response
-  - aligned statistics store to the corrected API contract
-- Validation result:
-  - statistics-specific `frontend-admin` type-check failures are cleared
-  - remaining `frontend-admin` failure is outside this change
-
-## Update 2026-03-30: price-config-boundary-alignment
-
-- backend price-config management now uses `/admin/price-config`
-- backend client reads remain on `/price-config/current` and `/price-config/estimate`
-- `frontend-admin` remains the only price-config management surface
-- `frontend-client` admin price-config routes and pages were removed
-- `frontend-client` price-config store/api now keep only current-price lookup and fee estimation
-- validation note: `backend` compile passed and `frontend-admin` type-check passed; `frontend-client` still has unrelated historical TypeScript failures outside the price-config slice
+- `接口文档设计/待实现功能清单.md`
+- `docs/superpowers/session-handoff.md`
+- `docs/superpowers/specs/2026-03-30-openspec-codex-collaboration-design.md`
+- `docs/superpowers/plans/2026-03-30-project-reidentification-plan.md`
