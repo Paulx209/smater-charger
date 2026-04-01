@@ -57,8 +57,7 @@ public class StartChargingTxServiceImpl implements StartChargingTxService {
                 );
 
         Reservation userReservation = validReservations.stream()
-                .filter(r -> r.getUserId().equals(userId) &&
-                        r.getStartTime().isBefore(now.plusMinutes(30)))
+                .filter(r -> r.getUserId().equals(userId))
                 .findFirst()
                 .orElse(null);
 

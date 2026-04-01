@@ -140,7 +140,8 @@ import {
   formatReservationTimeRange,
   calculateReservationDuration,
   canCancelReservation,
-  type ReservationStatus
+  ReservationStatus,
+  type ReservationStatus as ReservationStatusValue
 } from '@/types/reservation'
 import { navigateBack } from '@/utils/navigation'
 
@@ -164,12 +165,12 @@ const reservationId = computed(() => {
 const reservation = computed(() => reservationStore.currentReservation)
 
 // 获取状态文本
-const getStatusText = (status: ReservationStatus) => {
+const getStatusText = (status: ReservationStatusValue) => {
   return ReservationStatusText[status]
 }
 
 // 获取状态颜色
-const getStatusColor = (status: ReservationStatus) => {
+const getStatusColor = (status: ReservationStatusValue) => {
   return ReservationStatusColor[status]
 }
 
@@ -204,18 +205,14 @@ const canCancel = (reservation: any) => {
 const canStartCharging = (reservation: any) => {
   if (!reservation) return false
 
-  // 只有已确认的预约才能开始充电
-  if (reservation.status !== 'CONFIRMED') return false
+  // 只有待使用的预约才能开始充电
+  if (reservation.status !== ReservationStatus.PENDING) return false
 
-  // 检查是否在预约时间范围内（允许提前15分钟）
+  // 预约未结束前均允许开始充电，支持用户提前到达直接使用
   const now = new Date()
-  const startTime = new Date(reservation.startTime)
   const endTime = new Date(reservation.endTime)
 
-  // 提前15分钟可以开始充电
-  const allowStartTime = new Date(startTime.getTime() - 15 * 60 * 1000)
-
-  return now >= allowStartTime && now <= endTime
+  return now <= endTime
 }
 
 // 格式化剩余时间
