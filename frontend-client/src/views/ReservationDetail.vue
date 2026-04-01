@@ -119,9 +119,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessageBox, ElMessage, ElSelect, ElOption } from 'element-plus'
 import {
   ArrowLeft,
   Location,
@@ -299,25 +299,44 @@ const handleStartCharging = async () => {
     }
 
     // 让用户选择车辆
-    const { value: selectedVehicleId } = await ElMessageBox.prompt(
-      '请选择要充电的车辆',
-      '选择车辆',
-      {
-        confirmButtonText: '下一步',
-        cancelButtonText: '取消',
-        inputType: 'select',
-        inputOptions: vehicles.map(v => ({
-          label: `${v.licensePlate} (${v.brand} ${v.model})`,
-          value: v.id
-        })),
-        inputValidator: (value) => {
-          if (!value) {
-            return '请选择车辆'
-          }
-          return true
-        }
-      }
+    const selectedVehicleId = ref<number | ''>(
+      vehicleStore.defaultVehicle?.id ?? vehicles[0]?.id ?? ''
     )
+
+    await ElMessageBox({
+      title: '选择车辆',
+      message: h('div', { style: 'display:flex;flex-direction:column;gap:12px;' }, [
+        h('div', { style: 'color:#606266;font-size:14px;' }, '请选择要充电的车辆'),
+        h(
+          ElSelect,
+          {
+            modelValue: selectedVehicleId.value,
+            'onUpdate:modelValue': (value: number) => {
+              selectedVehicleId.value = value
+            },
+            placeholder: '请选择车辆',
+            style: 'width:100%;'
+          },
+          () =>
+            vehicles.map(vehicle =>
+              h(ElOption, {
+                key: vehicle.id,
+                label: `${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model})`,
+                value: vehicle.id
+              })
+            )
+        )
+      ]),
+      confirmButtonText: '下一步',
+      cancelButtonText: '取消',
+      beforeClose: (action, _instance, done) => {
+        if (action === 'confirm' && !selectedVehicleId.value) {
+          ElMessage.warning('请选择车辆')
+          return
+        }
+        done()
+      }
+    })
 
     // 让用户输入预计充电量
     const { value: electricQuantity } = await ElMessageBox.prompt(
@@ -383,7 +402,7 @@ const handleStartCharging = async () => {
     // 调用开始充电接口
     const record = await chargingRecordStore.beginCharging({
       chargingPileId: reservation.value.chargingPileId,
-      vehicleId: Number(selectedVehicleId)
+      vehicleId: Number(selectedVehicleId.value)
     })
 
     ElMessage.success('开始充电成功')
