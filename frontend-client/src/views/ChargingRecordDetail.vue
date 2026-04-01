@@ -8,7 +8,6 @@
         </div>
       </template>
 
-      <!-- 加载骨架屏 -->
       <template v-if="loading">
         <div class="skeleton-container">
           <el-skeleton :rows="3" animated class="skeleton-section" />
@@ -17,7 +16,6 @@
         </div>
       </template>
 
-      <!-- 错误状态 -->
       <template v-else-if="error">
         <el-result icon="error" title="加载失败" :sub-title="error">
           <template #extra>
@@ -26,10 +24,8 @@
         </el-result>
       </template>
 
-      <!-- 正常内容 -->
       <template v-else-if="chargingRecordStore.currentRecord">
         <div class="detail-content">
-          <!-- 状态标签 -->
           <div class="status-section">
             <el-tag
               :type="ChargingRecordStatusColor[chargingRecordStore.currentRecord.status]"
@@ -39,7 +35,6 @@
             </el-tag>
           </div>
 
-          <!-- 充电桩信息 -->
           <div class="section">
             <div class="section-title">
               <el-icon><Location /></el-icon>
@@ -47,7 +42,7 @@
             </div>
 
             <el-descriptions :column="isMobile ? 1 : 2" border>
-              <el-descriptions-item label="充电桩名称">
+              <el-descriptions-item label="充电桩编号">
                 {{ chargingRecordStore.currentRecord.pileName || '未知充电桩' }}
               </el-descriptions-item>
 
@@ -63,7 +58,6 @@
             </el-descriptions>
           </div>
 
-          <!-- 车辆信息 -->
           <div class="section">
             <div class="section-title">
               <el-icon><Van /></el-icon>
@@ -77,7 +71,6 @@
             </el-descriptions>
           </div>
 
-          <!-- 充电信息 -->
           <div class="section">
             <div class="section-title">
               <el-icon><Timer /></el-icon>
@@ -107,7 +100,6 @@
             </el-descriptions>
           </div>
 
-          <!-- 费用信息 -->
           <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.COMPLETED" class="section">
             <div class="section-title">
               <el-icon><Money /></el-icon>
@@ -115,7 +107,7 @@
             </div>
 
             <el-descriptions :column="isMobile ? 1 : 2" border>
-              <el-descriptions-item label="每度电价格">
+              <el-descriptions-item label="每度电价">
                 {{ chargingRecordStore.currentRecord.pricePerKwh ? `¥${chargingRecordStore.currentRecord.pricePerKwh.toFixed(2)}/度` : '-' }}
               </el-descriptions-item>
 
@@ -129,7 +121,7 @@
                 </span>
               </el-descriptions-item>
 
-              <el-descriptions-item label="服务费">
+              <el-descriptions-item label="服务费合计">
                 <span class="fee-breakdown">
                   {{ chargingRecordStore.currentRecord.feeBreakdown ? formatFee(chargingRecordStore.currentRecord.feeBreakdown.serviceFee) : '-' }}
                 </span>
@@ -143,7 +135,6 @@
             </el-descriptions>
           </div>
 
-          <!-- 记录信息 -->
           <div class="section">
             <div class="section-title">
               <el-icon><InfoFilled /></el-icon>
@@ -151,7 +142,7 @@
             </div>
 
             <el-descriptions :column="isMobile ? 1 : 2" border>
-              <el-descriptions-item label="记录ID">
+              <el-descriptions-item label="记录 ID">
                 {{ chargingRecordStore.currentRecord.id }}
               </el-descriptions-item>
 
@@ -165,7 +156,6 @@
             </el-descriptions>
           </div>
 
-          <!-- 操作按钮 -->
           <div v-if="chargingRecordStore.currentRecord.status === ChargingRecordStatus.CHARGING" class="action-section">
             <el-button
               type="danger"
@@ -184,61 +174,13 @@
         <el-empty description="充电记录不存在" />
       </div>
     </el-card>
-
-    <!-- 结束充电对话框 -->
-    <el-dialog
-      v-model="endChargingDialogVisible"
-      title="结束充电"
-      :width="isMobile ? '90%' : '500px'"
-      :close-on-click-modal="false"
-    >
-      <el-form
-        ref="endChargingFormRef"
-        :model="endChargingForm"
-        :rules="endChargingRules"
-        label-width="120px"
-      >
-        <el-form-item label="充电量" prop="electricQuantity">
-          <el-input-number
-            v-model="endChargingForm.electricQuantity"
-            :min="0.01"
-            :max="999.99"
-            :precision="2"
-            :step="1"
-            placeholder="请输入充电量"
-            style="width: 100%"
-          />
-          <div class="form-tip">单位：度（kWh）</div>
-        </el-form-item>
-
-        <el-form-item label="快捷选择">
-          <el-button-group>
-            <el-button @click="setElectricQuantity(10)">10度</el-button>
-            <el-button @click="setElectricQuantity(20)">20度</el-button>
-            <el-button @click="setElectricQuantity(30)">30度</el-button>
-            <el-button @click="setElectricQuantity(50)">50度</el-button>
-          </el-button-group>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="endChargingDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          @click="confirmEndCharging"
-          :loading="endingCharging"
-        >
-          确认结束
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   Location,
@@ -263,95 +205,25 @@ const router = useRouter()
 const route = useRoute()
 const chargingRecordStore = useChargingRecordStore()
 
-// 加载和错误状态
 const loading = ref(false)
 const error = ref<string | null>(null)
-
-// 响应式布局
+const endingCharging = ref(false)
 const windowWidth = ref(window.innerWidth)
+
 const isMobile = computed(() => windowWidth.value < 768)
 
 const handleResize = () => {
   windowWidth.value = window.innerWidth
 }
 
-// 结束充电状态
-const endingCharging = ref(false)
-const endChargingDialogVisible = ref(false)
-
-// 结束充电表单
-const endChargingFormRef = ref<FormInstance>()
-const endChargingForm = ref({
-  electricQuantity: 0
-})
-
-// 表单验证规则
-const endChargingRules: FormRules = {
-  electricQuantity: [
-    { required: true, message: '请输入充电量', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (!value || value <= 0) {
-          callback(new Error('充电量必须大于0'))
-        } else if (!/^\d+(\.\d{1,2})?$/.test(value.toString())) {
-          callback(new Error('充电量最多保留2位小数'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
-  ]
-}
-
-// 返回列表
 const handleBack = () => {
   navigateBack(router, '/charging-record')
 }
 
-// 重试
 const handleRetry = async () => {
   await loadDetail()
 }
 
-// 设置充电量
-const setElectricQuantity = (quantity: number) => {
-  endChargingForm.value.electricQuantity = quantity
-}
-
-// 结束充电
-const handleEndCharging = () => {
-  endChargingForm.value.electricQuantity = 0
-  endChargingDialogVisible.value = true
-}
-
-// 确认结束充电
-const confirmEndCharging = async () => {
-  if (!endChargingFormRef.value || !chargingRecordStore.currentRecord) return
-
-  try {
-    await endChargingFormRef.value.validate()
-
-    endingCharging.value = true
-
-    await chargingRecordStore.finishCharging(chargingRecordStore.currentRecord.id, {
-      electricQuantity: endChargingForm.value.electricQuantity
-    })
-
-    endChargingDialogVisible.value = false
-
-    const id = Number(route.params.id)
-    await loadDetail()
-
-    ElMessage.success('充电已结束')
-  } catch (err: any) {
-    ElMessage.error(err.message || '结束充电失败')
-  } finally {
-    endingCharging.value = false
-  }
-}
-
-// 格式化日期时间
 const formatDateTime = (dateTime: string) => {
   const date = new Date(dateTime)
   return date.toLocaleString('zh-CN', {
@@ -364,13 +236,63 @@ const formatDateTime = (dateTime: string) => {
   })
 }
 
-// 加载详情
+const getDurationText = () => {
+  const record = chargingRecordStore.currentRecord
+  if (!record) return '-'
+
+  if (record.duration !== undefined && record.duration !== null) {
+    return formatDuration(record.duration)
+  }
+
+  const start = new Date(record.startTime).getTime()
+  const now = Date.now()
+  const minutes = Math.max(1, Math.floor((now - start) / (1000 * 60)))
+  return formatDuration(minutes)
+}
+
+const confirmEndCharging = async () => {
+  if (!chargingRecordStore.currentRecord) return
+
+  try {
+    endingCharging.value = true
+    await chargingRecordStore.finishCharging(chargingRecordStore.currentRecord.id)
+    await loadDetail()
+    ElMessage.success('充电已结束')
+  } catch (err: any) {
+    ElMessage.error(err.message || '结束充电失败')
+  } finally {
+    endingCharging.value = false
+  }
+}
+
+const handleEndCharging = async () => {
+  if (!chargingRecordStore.currentRecord) return
+
+  try {
+    await ElMessageBox.confirm(
+      `将结束本次充电。系统会根据充电桩功率和实际充电时长自动计算充电量，当前已充电时长约为 ${getDurationText()}。`,
+      '确认结束充电',
+      {
+        confirmButtonText: '确认结束',
+        cancelButtonText: '继续充电',
+        type: 'warning'
+      }
+    )
+
+    await confirmEndCharging()
+  } catch (err) {
+    if (err !== 'cancel') {
+      console.error('结束充电确认失败:', err)
+    }
+  }
+}
+
 const loadDetail = async () => {
   const id = Number(route.params.id)
 
-  if (!id || isNaN(id)) {
-    ElMessage.error('充电记录ID无效')
-    router.push('/charging-records')
+  if (!id || Number.isNaN(id)) {
+    ElMessage.error('充电记录 ID 无效')
+    router.push('/charging-record')
     return
   }
 
@@ -385,7 +307,6 @@ const loadDetail = async () => {
   }
 }
 
-// 组件挂载时获取充电记录详情
 onMounted(async () => {
   window.addEventListener('resize', handleResize)
   await loadDetail()
@@ -484,13 +405,6 @@ onUnmounted(() => {
   margin-top: 30px;
 }
 
-.form-tip {
-  margin-top: 5px;
-  font-size: 12px;
-  color: #909399;
-}
-
-/* 响应式布局 */
 @media (max-width: 768px) {
   .charging-record-detail-container {
     padding: 12px;

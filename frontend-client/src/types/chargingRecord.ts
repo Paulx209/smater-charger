@@ -57,7 +57,6 @@ export interface ChargingRecordStartRequest {
 
 // 结束充电请求
 export interface ChargingRecordEndRequest {
-  electricQuantity: number  // 充电量（度），>0
 }
 
 // 查询参数
@@ -120,7 +119,7 @@ export function formatDuration(minutes?: number): string {
 // 格式化充电量
 export function formatElectricQuantity(quantity?: number): string {
   if (quantity === undefined || quantity === null) return '-'
-  return `${quantity.toFixed(2)} 度`
+  return `${quantity.toFixed(3)} 度`
 }
 
 // 格式化费用

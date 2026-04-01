@@ -142,15 +142,21 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         chargingRecord.setDuration(durationMinutes);
 
         // 6. 璁板綍鍏呯數閲?
-        chargingRecord.setElectricQuantity(request.getElectricQuantity());
+        BigDecimal durationHours = BigDecimal.valueOf(duration.getSeconds())
+                .divide(BigDecimal.valueOf(3600), 6, RoundingMode.DOWN);
 
         // 7. 鑾峰彇鍏呯數妗╀俊鎭苟璁＄畻璐圭敤
         ChargingPile chargingPile = chargingPileRepository.findById(chargingRecord.getChargingPileId())
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
+        BigDecimal electricQuantity = chargingPile.getPower()
+                .multiply(durationHours)
+                .setScale(3, RoundingMode.DOWN);
+        chargingRecord.setElectricQuantity(electricQuantity);
+
         BigDecimal fee = priceConfigService.calculateFee(
                 chargingPile.getType().name(),
-                request.getElectricQuantity()
+                electricQuantity
         );
         chargingRecord.setFee(fee);
 
@@ -163,7 +169,7 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         chargingPileRepository.save(chargingPile);
 
         log.info("缁撴潫鍏呯數鎴愬姛: userId={}, recordId={}, duration={}min, quantity={}, fee={}",
-                userId, recordId, durationMinutes, request.getElectricQuantity(), fee);
+                userId, recordId, durationMinutes, electricQuantity, fee);
 
         return convertToResponse(chargingRecord, chargingPile, null);
     }

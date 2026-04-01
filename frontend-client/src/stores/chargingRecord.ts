@@ -50,7 +50,7 @@ export const useChargingRecordStore = defineStore('chargingRecord', () => {
   /**
    * 结束充电
    */
-  const finishCharging = async (id: number, data: ChargingRecordEndRequest) => {
+  const finishCharging = async (id: number, data: ChargingRecordEndRequest = {}) => {
     try {
       loading.value = true
       const result = await endCharging(id, data)

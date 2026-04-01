@@ -19,7 +19,7 @@ export function startCharging(data: ChargingRecordStartRequest): Promise<Chargin
 /**
  * 结束充电
  */
-export function endCharging(id: number, data: ChargingRecordEndRequest): Promise<ChargingRecordInfo> {
+export function endCharging(id: number, data: ChargingRecordEndRequest = {}): Promise<ChargingRecordInfo> {
   return request.post(`/charging-record/end/${id}`, data)
 }
 
