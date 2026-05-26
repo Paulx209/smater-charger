@@ -14,9 +14,12 @@ Redesign the owner-facing home page to match the provided reference image: a war
   * Main content cards for current vehicle, quick pile search, current charging status, common functions, carbon reduction, and monthly charging statistics.
   * Warm white/orange visual style with soft borders, rounded cards, and light illustrations.
 * User provided the vehicle-card background image in the conversation.
-* Vehicle-card background asset path is confirmed as `frontend-client/public/images/home-vehicle-card-bg.png`, referenced in CSS as `/images/home-vehicle-card-bg.png`.
+* Vehicle-card background asset path is confirmed as `frontend-client/public/images/pic1.png`,
+  referenced in CSS as `/images/pic1.png`.
+* Carbon-reduction background asset path is confirmed as `frontend-client/public/images/pic2.png`,
+  referenced in CSS as `/images/pic2.png`.
 * User wants image-backed cards for the vehicle display area, carbon-reduction area, and the sidebar promo area above the customer hotline.
-* Carbon-reduction and sidebar promo assets are not available yet; reserve image slots for later replacement.
+* Sidebar promo asset is not available yet; reserve an image slot for later replacement.
 * Current owner home page is `frontend-client/src/views/HomeView.vue`.
 * Current authenticated app shell/top navigation is `frontend-client/src/App.vue`.
 * Current home page composes `AnnouncementCarousel` and `CurrentChargingStatus`, then renders quick action cards and feature cards.
@@ -43,8 +46,8 @@ Redesign the owner-facing home page to match the provided reference image: a war
 * Implement via an overall shell + home content replacement while reusing existing store/API logic.
 * Add a waving expression after the `Hello，欢迎回来！` greeting.
 * The vehicle display card must support a user-provided background image.
-* The vehicle display card should reference `/images/home-vehicle-card-bg.png`.
-* The carbon-reduction card must reserve a background image slot; initial implementation may use a placeholder visual until the user provides an asset.
+* The vehicle display card should reference `/images/pic1.png`.
+* The carbon-reduction card must use the user-provided `/images/pic2.png` background image.
 * The left sidebar must include both a promotional image card and a customer hotline card below it.
 * The promotional card above the hotline must reserve a background image slot; initial implementation may use a placeholder visual until the user provides an asset.
 * Use existing real data where it already exists without backend changes:
@@ -70,7 +73,8 @@ Redesign the owner-facing home page to match the provided reference image: a war
 * [x] Current vehicle card shows `暂未绑定车辆，前去绑定` when no vehicle is bound and links to vehicle management.
 * [x] Current vehicle card uses static range/battery visual values when showing a bound vehicle.
 * [x] Vehicle card renders with the vehicle-card background image.
-* [x] Carbon-reduction and sidebar promo areas include replaceable image slots/placeholders.
+* [x] Carbon-reduction area renders with the user-provided background image.
+* [x] Sidebar promo area includes a replaceable image slot/placeholder.
 * [x] Sidebar includes the customer hotline card below the promotional image card.
 * [x] Current charging status behavior is preserved or an approved replacement is implemented.
 * [x] Monthly charging statistics displays real current-month total count, total electric quantity, and total fee from the existing monthly statistics endpoint.
@@ -142,7 +146,8 @@ The redesign will update the authenticated owner shell globally rather than only
   * `frontend-client/src/App.vue`
   * `frontend-client/src/views/HomeView.vue`
   * `frontend-client/vite.config.ts`
-  * `frontend-client/public/images/home-vehicle-card-bg.png`
+  * `frontend-client/public/images/pic1.png`
+  * `frontend-client/public/images/pic2.png`
 * Verification run:
   * `npm run type-check`
   * `npx eslint src/App.vue src/views/HomeView.vue vite.config.ts --no-fix --cache=false`
@@ -160,9 +165,8 @@ The redesign will update the authenticated owner shell globally rather than only
     with the supplied reference image.
   * Removed `vite-plugin-vue-devtools` from `frontend-client/vite.config.ts` because its dev overlay
     rendered a floating control on `localhost:5173` and polluted the target UI screenshot.
-* Vehicle-card background asset exists at
-  `frontend-client/public/images/home-vehicle-card-bg.png`; the build no longer emits the
-  unresolved image URL warning.
+* Vehicle-card background asset exists at `frontend-client/public/images/pic1.png`.
+* Carbon-reduction background asset exists at `frontend-client/public/images/pic2.png`.
 * Browser screenshot verification:
   * URL: `http://127.0.0.1:5173/`
   * Viewport: `1536x1024`

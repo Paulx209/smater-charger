@@ -433,8 +433,8 @@ onUnmounted(() => {
   min-height: clamp(198px, 24vh, 244px);
   overflow: hidden;
   background-image:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0 43%, rgba(255, 255, 255, 0.72) 58%),
-    url('/images/home-vehicle-card-bg.png');
+    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0 43%, rgba(255, 255, 255, 0.46) 66%),
+    url('/images/pic1.png');
   background-position: center, center right;
   background-size: cover, cover;
 }
@@ -790,20 +790,16 @@ onUnmounted(() => {
   min-height: clamp(112px, 14vh, 136px);
   overflow: hidden;
   padding: clamp(14px, 2vh, 20px) 32px;
-  background:
-    linear-gradient(135deg, rgba(255, 242, 227, 0.94), rgba(255, 255, 255, 0.84)),
-    radial-gradient(circle at 90% 10%, rgba(255, 175, 94, 0.18), transparent 30%);
+  background-image:
+    linear-gradient(90deg, rgba(255, 250, 245, 0.78) 0 42%, rgba(255, 250, 245, 0.24) 100%),
+    url('/images/pic2.png');
+  background-position: center, center;
+  background-size: cover, cover;
 }
 
 .carbon-card::after {
-  position: absolute;
-  right: -48px;
-  bottom: -70px;
-  width: 260px;
-  height: 160px;
+  display: none;
   content: '';
-  border-radius: 50%;
-  background: rgba(255, 179, 90, 0.16);
 }
 
 .carbon-card__art {
@@ -814,7 +810,8 @@ onUnmounted(() => {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.62);
+  background: transparent;
+  opacity: 0;
 }
 
 .carbon-card__art span {
