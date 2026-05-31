@@ -52,6 +52,13 @@ public class ChargingRecordController {
         return Result.success(response);
     }
 
+    @PostMapping("/{id:\\d+}/leave")
+    public Result<ChargingRecordResponse> confirmLeave(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        ChargingRecordResponse response = chargingRecordService.confirmLeave(userId, id);
+        return Result.success(response);
+    }
+
     @GetMapping
     public Result<Page<ChargingRecordResponse>> getChargingRecordList(
             @RequestParam(required = false) ChargingRecordStatus status,

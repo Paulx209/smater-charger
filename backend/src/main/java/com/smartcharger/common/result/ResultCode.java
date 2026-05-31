@@ -73,7 +73,6 @@ public enum ResultCode {
     CHARGING_PILE_HAS_RESERVATIONS(4804, "该充电桩有关联的预约记录，无法删除"),
     CHARGING_PILE_STATUS_INVALID(4805, "充电桩状态转换不合法，只能手动设置为空闲或故障"),
     CHARGING_PILE_IS_CHARGING(4806, "充电桩正在充电中，无法手动更改状态"),
-    CHARGING_PILE_IS_RESERVED(4807, "充电桩已被预约，需要先取消预约"),
 
     // 用户管理相关错误 49xx
     USER_HAS_ACTIVE_CHARGING(4901, "该用户有正在进行的充电记录"),

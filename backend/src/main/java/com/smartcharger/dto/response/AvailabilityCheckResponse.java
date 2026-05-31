@@ -31,6 +31,8 @@ public class AvailabilityCheckResponse {
      */
     private List<ConflictReservation> conflictReservations;
 
+    private List<ConflictReservation> reservedTimeSlots;
+
     @Data
     @Builder
     @NoArgsConstructor

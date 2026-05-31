@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface ReservationService {
 
@@ -25,6 +26,8 @@ public interface ReservationService {
     void handleExpiredReservations();
 
     AvailabilityCheckResponse checkAvailability(Long pileId, LocalDateTime startTime, LocalDateTime endTime);
+
+    List<AvailabilityCheckResponse.ConflictReservation> getReservedTimeSlots(Long pileId);
 
     Page<ReservationResponse> getAdminReservations(Long userId, Long chargingPileId,
                                                    ReservationStatus status,

@@ -123,19 +123,19 @@ public class StatisticsAdminServiceImpl implements StatisticsAdminService {
                 .idleCount(safeInt(chargingPileRepository.countByStatus(ChargingPileStatus.IDLE)))
                 .chargingCount(safeInt(chargingPileRepository.countByStatus(ChargingPileStatus.CHARGING)))
                 .faultCount(safeInt(chargingPileRepository.countByStatus(ChargingPileStatus.FAULT)))
-                .reservedCount(safeInt(chargingPileRepository.countByStatus(ChargingPileStatus.RESERVED)))
+                .reservedCount(0)
                 .overtimeCount(safeInt(chargingPileRepository.countByStatus(ChargingPileStatus.OVERTIME)))
                 .build();
     }
 
     private RevenueStatisticsResponse buildRevenueStatistics(DateRange dateRange) {
-        BigDecimal totalRevenue = defaultBigDecimal(chargingRecordRepository.sumCompletedFeeByStartTimeRange(
+        BigDecimal totalRevenue = defaultBigDecimal(chargingRecordRepository.sumSettledFeeByStartTimeRange(
                 dateRange.getStartTime(), dateRange.getEndExclusive()));
-        long totalChargingCount = defaultLong(chargingRecordRepository.countCompletedRecordsByStartTimeRange(
+        long totalChargingCount = defaultLong(chargingRecordRepository.countSettledRecordsByStartTimeRange(
                 dateRange.getStartTime(), dateRange.getEndExclusive()));
         BigDecimal avgDailyRevenue = calculateAverageDailyRevenue(totalRevenue, dateRange.getTotalDays());
 
-        List<Object[]> dailyRows = chargingRecordRepository.aggregateDailyRevenueByStartTimeRange(
+        List<Object[]> dailyRows = chargingRecordRepository.aggregateDailySettledRevenueByStartTimeRange(
                 dateRange.getStartTime(), dateRange.getEndExclusive());
         Map<LocalDate, RevenueStatisticsResponse.DailyRevenueRecord> dailyMap = new HashMap<>();
         for (Object[] row : dailyRows) {

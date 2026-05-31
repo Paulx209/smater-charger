@@ -192,11 +192,6 @@ public class ChargingPileAdminServiceImpl implements ChargingPileAdminService {
             throw new BusinessException(ResultCode.CHARGING_PILE_IS_CHARGING);
         }
 
-        // 如果当前状态为"已预约"，需要先取消预约
-        if (chargingPile.getStatus() == ChargingPileStatus.RESERVED) {
-            throw new BusinessException(ResultCode.CHARGING_PILE_IS_RESERVED);
-        }
-
         // 更新状态
         chargingPile.setStatus(newStatus);
         chargingPileRepository.save(chargingPile);

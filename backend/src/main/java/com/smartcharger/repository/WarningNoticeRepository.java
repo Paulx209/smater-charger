@@ -1,6 +1,7 @@
 package com.smartcharger.repository;
 
 import com.smartcharger.entity.WarningNotice;
+import com.smartcharger.entity.enums.SendStatus;
 import com.smartcharger.entity.enums.WarningNoticeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,28 +18,34 @@ import java.util.Optional;
 @Repository
 public interface WarningNoticeRepository extends JpaRepository<WarningNotice, Long> {
 
-    Page<WarningNotice> findByUserId(Long userId, Pageable pageable);
+    Page<WarningNotice> findByUserIdAndSendStatus(Long userId, SendStatus sendStatus, Pageable pageable);
 
-    Page<WarningNotice> findByUserIdAndType(Long userId, WarningNoticeType type, Pageable pageable);
+    Page<WarningNotice> findByUserIdAndTypeAndSendStatus(Long userId, WarningNoticeType type,
+                                                         SendStatus sendStatus, Pageable pageable);
 
-    Page<WarningNotice> findByUserIdAndIsRead(Long userId, Integer isRead, Pageable pageable);
+    Page<WarningNotice> findByUserIdAndIsReadAndSendStatus(Long userId, Integer isRead,
+                                                           SendStatus sendStatus, Pageable pageable);
 
-    Page<WarningNotice> findByUserIdAndTypeAndIsRead(Long userId, WarningNoticeType type,
-                                                     Integer isRead, Pageable pageable);
+    Page<WarningNotice> findByUserIdAndTypeAndIsReadAndSendStatus(Long userId, WarningNoticeType type,
+                                                                  Integer isRead, SendStatus sendStatus,
+                                                                  Pageable pageable);
 
-    Integer countByUserIdAndIsRead(Long userId, Integer isRead);
+    Integer countByUserIdAndIsReadAndSendStatus(Long userId, Integer isRead, SendStatus sendStatus);
 
     @Modifying
-    @Query("UPDATE WarningNotice wn SET wn.isRead = 1 WHERE wn.userId = :userId AND wn.isRead = 0")
-    void markAllAsRead(@Param("userId") Long userId);
+    @Query("UPDATE WarningNotice wn SET wn.isRead = 1 " +
+            "WHERE wn.userId = :userId AND wn.isRead = 0 AND wn.sendStatus = :sendStatus")
+    void markAllAsRead(@Param("userId") Long userId, @Param("sendStatus") SendStatus sendStatus);
 
     @Modifying
-    @Query("UPDATE WarningNotice wn SET wn.isRead = 1 WHERE wn.id IN :ids")
-    void markAllAsReadByIds(@Param("ids") List<Long> ids);
+    @Query("UPDATE WarningNotice wn SET wn.isRead = 1 WHERE wn.id IN :ids AND wn.sendStatus = :sendStatus")
+    void markAllAsReadByIds(@Param("ids") List<Long> ids, @Param("sendStatus") SendStatus sendStatus);
 
     Optional<WarningNotice> findByChargingRecordIdAndType(Long chargingRecordId, WarningNoticeType type);
 
     Optional<WarningNotice> findByIdAndUserId(Long id, Long userId);
+
+    Optional<WarningNotice> findByIdAndUserIdAndSendStatus(Long id, Long userId, SendStatus sendStatus);
 
     Long countByUserIdAndType(Long userId, WarningNoticeType type);
 

@@ -24,6 +24,19 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
      */
     Optional<ChargingRecord> findByUserIdAndStatus(Long userId, ChargingRecordStatus status);
 
+    Optional<ChargingRecord> findFirstByChargingPileIdAndStatusAndLeaveTimeIsNullOrderByEndTimeDesc(
+            Long chargingPileId, ChargingRecordStatus status);
+
+    List<ChargingRecord> findByStatusAndTargetEndTimeLessThanEqual(
+            ChargingRecordStatus status, LocalDateTime targetEndTime);
+
+    List<ChargingRecord> findByStatusAndPreEndNoticeSentAndTargetEndTimeBetween(
+            ChargingRecordStatus status, Integer preEndNoticeSent,
+            LocalDateTime startTime, LocalDateTime endTime);
+
+    List<ChargingRecord> findByStatusAndEndTimeIsNotNullAndLeaveTimeIsNull(
+            ChargingRecordStatus status);
+
     /**
      * 查询用户的充电记录（分页）
      */
@@ -59,26 +72,26 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
                                                              Pageable pageable);
 
     /**
-     * 查询用户指定年月的已完成充电记录
+     * 查询用户指定年月的已结算充电记录
      */
     @Query("SELECT cr FROM ChargingRecord cr WHERE cr.userId = :userId " +
            "AND cr.status = 'COMPLETED' " +
            "AND YEAR(cr.startTime) = :year " +
            "AND MONTH(cr.startTime) = :month " +
            "ORDER BY cr.startTime ASC")
-    List<ChargingRecord> findCompletedRecordsByMonth(@Param("userId") Long userId,
-                                                       @Param("year") Integer year,
-                                                       @Param("month") Integer month);
+    List<ChargingRecord> findSettledRecordsByMonth(@Param("userId") Long userId,
+                                                    @Param("year") Integer year,
+                                                    @Param("month") Integer month);
 
     /**
-     * 查询用户指定年份的已完成充电记录
+     * 查询用户指定年份的已结算充电记录
      */
     @Query("SELECT cr FROM ChargingRecord cr WHERE cr.userId = :userId " +
            "AND cr.status = 'COMPLETED' " +
            "AND YEAR(cr.startTime) = :year " +
            "ORDER BY cr.startTime ASC")
-    List<ChargingRecord> findCompletedRecordsByYear(@Param("userId") Long userId,
-                                                      @Param("year") Integer year);
+    List<ChargingRecord> findSettledRecordsByYear(@Param("userId") Long userId,
+                                                   @Param("year") Integer year);
 
     /**
      * 管理端：查询所有充电记录（分页）
@@ -171,13 +184,13 @@ public interface ChargingRecordRepository extends JpaRepository<ChargingRecord, 
     Long countUsedChargingPilesByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT SUM(cr.fee) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime")
-    java.math.BigDecimal sumCompletedFeeByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    java.math.BigDecimal sumSettledFeeByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT COUNT(cr) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime")
-    Long countCompletedRecordsByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    Long countSettledRecordsByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT DATE(cr.startTime), SUM(cr.fee), COUNT(cr) FROM ChargingRecord cr WHERE cr.status = 'COMPLETED' AND cr.startTime >= :startTime AND cr.startTime < :endTime GROUP BY DATE(cr.startTime) ORDER BY DATE(cr.startTime)")
-    List<Object[]> aggregateDailyRevenueByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+    List<Object[]> aggregateDailySettledRevenueByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT COUNT(DISTINCT cr.userId) FROM ChargingRecord cr WHERE cr.startTime >= :startTime AND cr.startTime < :endTime")
     Long countDistinctActiveUsersByStartTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);

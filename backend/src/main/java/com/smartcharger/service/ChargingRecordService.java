@@ -25,6 +25,12 @@ public interface ChargingRecordService {
      */
     ChargingRecordResponse endCharging(Long userId, Long recordId, ChargingRecordEndRequest request);
 
+    ChargingRecordResponse confirmLeave(Long userId, Long recordId);
+
+    void autoCompleteDueChargingRecords();
+
+    void sendPreEndChargingReminders();
+
     /**
      * 鏌ヨ鍏呯數璁板綍鍒楄〃
      */

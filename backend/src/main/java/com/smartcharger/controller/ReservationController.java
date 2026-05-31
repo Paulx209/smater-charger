@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 预约管理控制器
@@ -83,6 +84,12 @@ public class ReservationController {
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
         AvailabilityCheckResponse response = reservationService.checkAvailability(pileId, startTime, endTime);
         return Result.success(response);
+    }
+
+    @GetMapping("/piles/{pileId}/reserved-slots")
+    public Result<List<AvailabilityCheckResponse.ConflictReservation>> getReservedTimeSlots(
+            @PathVariable Long pileId) {
+        return Result.success(reservationService.getReservedTimeSlots(pileId));
     }
 
     /**

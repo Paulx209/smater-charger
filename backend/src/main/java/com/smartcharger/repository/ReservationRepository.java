@@ -28,6 +28,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByChargingPileIdAndStatusAndEndTimeAfter(
             Long chargingPileId, ReservationStatus status, LocalDateTime time);
 
+    List<Reservation> findByChargingPileIdAndStatusAndEndTimeAfterOrderByStartTimeAsc(
+            Long chargingPileId, ReservationStatus status, LocalDateTime time);
+
     List<Reservation> findByStatusAndEndTimeBefore(
             ReservationStatus status, LocalDateTime time);
 

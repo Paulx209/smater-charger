@@ -7,14 +7,19 @@ import com.smartcharger.dto.request.ChargingRecordStartRequest;
 import com.smartcharger.dto.response.ChargingRecordResponse;
 import com.smartcharger.dto.response.ChargingStatisticsMonthlyResponse;
 import com.smartcharger.dto.response.ChargingStatisticsYearlyResponse;
-import com.smartcharger.entity.*;
+import com.smartcharger.entity.ChargingPile;
+import com.smartcharger.entity.ChargingRecord;
+import com.smartcharger.entity.Vehicle;
+import com.smartcharger.entity.enums.ChargingEndReason;
 import com.smartcharger.entity.enums.ChargingPileStatus;
 import com.smartcharger.entity.enums.ChargingRecordStatus;
-import com.smartcharger.entity.enums.ReservationStatus;
-import com.smartcharger.repository.*;
+import com.smartcharger.repository.ChargingPileRepository;
+import com.smartcharger.repository.ChargingRecordRepository;
+import com.smartcharger.repository.VehicleRepository;
 import com.smartcharger.service.ChargingRecordService;
 import com.smartcharger.service.PriceConfigService;
 import com.smartcharger.service.StartChargingTxService;
+import com.smartcharger.service.WarningNoticeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -32,25 +37,30 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * 鍏呯數璁板綍鏈嶅姟瀹炵幇绫?
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChargingRecordServiceImpl implements ChargingRecordService {
 
+    private static final int PRE_END_NOTICE_MINUTES = 5;
+
     private final ChargingRecordRepository chargingRecordRepository;
     private final ChargingPileRepository chargingPileRepository;
     private final VehicleRepository vehicleRepository;
-    private final ReservationRepository reservationRepository;
     private final PriceConfigService priceConfigService;
     private final RedissonClient redissonClient;
     private final StartChargingTxService startChargingTxService;
+    private final WarningNoticeService warningNoticeService;
 
     @Override
     public ChargingRecordResponse startCharging(Long userId, ChargingRecordStartRequest request) {
@@ -76,16 +86,11 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
             pileLock = redissonClient.getLock(pileLockKey);
             if (!pileLock.tryLock(5, 30, TimeUnit.SECONDS)) {
                 log.warn("Failed to acquire lock for pile {}: timeout", request.getChargingPileId());
-                ChargingPile pile = chargingPileRepository.findById(request.getChargingPileId()).orElse(null);
-                if (pile != null && pile.getStatus() == ChargingPileStatus.CHARGING) {
-                    throw new BusinessException(ResultCode.CHARGING_PILE_NOT_IDLE);
-                }
                 throw new BusinessException(ResultCode.CHARGING_PILE_BUSY);
             }
             log.info("Acquired lock for user {} and pile {}", userId, request.getChargingPileId());
 
             return startChargingTxService.startChargingInTx(userId, request);
-
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Lock acquisition interrupted for user {}", userId, e);
@@ -118,67 +123,110 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     @Override
     @Transactional
     public ChargingRecordResponse endCharging(Long userId, Long recordId, ChargingRecordEndRequest request) {
-        // 1. 楠岃瘉鍏呯數璁板綍鏄惁瀛樺湪
         ChargingRecord chargingRecord = chargingRecordRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
 
-        // 2. 楠岃瘉鍏呯數璁板綍鏄惁灞炰簬褰撳墠鐢ㄦ埛
         if (!chargingRecord.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 3. 楠岃瘉鍏呯數璁板綍鐘舵€佹槸鍚︿负"鍏呯數涓?
-        if (chargingRecord.getStatus() != ChargingRecordStatus.CHARGING) {
-            throw new BusinessException(ResultCode.CHARGING_RECORD_NOT_CHARGING);
-        }
-
-        // 4. 璁板綍缁撴潫鏃堕棿
-        LocalDateTime endTime = LocalDateTime.now();
-        chargingRecord.setEndTime(endTime);
-
-        // 5. 璁＄畻鍏呯數鏃堕暱锛堝垎閽燂級
-        Duration duration = Duration.between(chargingRecord.getStartTime(), endTime);
-        int durationMinutes = (int) duration.toMinutes();
-        chargingRecord.setDuration(durationMinutes);
-
-        // 6. 璁板綍鍏呯數閲?
-        BigDecimal durationHours = BigDecimal.valueOf(duration.getSeconds())
-                .divide(BigDecimal.valueOf(3600), 6, RoundingMode.DOWN);
-
-        // 7. 鑾峰彇鍏呯數妗╀俊鎭苟璁＄畻璐圭敤
         ChargingPile chargingPile = chargingPileRepository.findById(chargingRecord.getChargingPileId())
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
 
-        BigDecimal electricQuantity = chargingPile.getPower()
-                .multiply(durationHours)
-                .setScale(3, RoundingMode.DOWN);
-        chargingRecord.setElectricQuantity(electricQuantity);
-
-        BigDecimal fee = priceConfigService.calculateFee(
-                chargingPile.getType().name(),
-                electricQuantity
-        );
-        chargingRecord.setFee(fee);
-
-        // 8. 鏇存柊鍏呯數璁板綍鐘舵€佷负"宸插畬鎴?
-        chargingRecord.setStatus(ChargingRecordStatus.COMPLETED);
-        chargingRecord = chargingRecordRepository.save(chargingRecord);
-
-        // 9. 鏇存柊鍏呯數妗╃姸鎬佷负"绌洪棽"
-        chargingPile.setStatus(ChargingPileStatus.IDLE);
-        chargingPileRepository.save(chargingPile);
-
-        log.info("缁撴潫鍏呯數鎴愬姛: userId={}, recordId={}, duration={}min, quantity={}, fee={}",
-                userId, recordId, durationMinutes, electricQuantity, fee);
-
+        chargingRecord = completeCharging(chargingRecord, chargingPile, ChargingEndReason.USER_MANUAL);
         return convertToResponse(chargingRecord, chargingPile, null);
+    }
+
+    @Override
+    @Transactional
+    public ChargingRecordResponse confirmLeave(Long userId, Long recordId) {
+        ChargingRecord chargingRecord = chargingRecordRepository.findById(recordId)
+                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
+
+        if (!chargingRecord.getUserId().equals(userId)) {
+            throw new BusinessException(ResultCode.FORBIDDEN);
+        }
+        if (chargingRecord.getStatus() != ChargingRecordStatus.COMPLETED || chargingRecord.getEndTime() == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "充电记录尚未完成");
+        }
+
+        ChargingPile chargingPile = chargingPileRepository.findById(chargingRecord.getChargingPileId())
+                .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
+
+        Optional<ChargingRecord> currentOccupancy = chargingRecordRepository
+                .findFirstByChargingPileIdAndStatusAndLeaveTimeIsNullOrderByEndTimeDesc(
+                        chargingRecord.getChargingPileId(), ChargingRecordStatus.COMPLETED);
+        if (currentOccupancy.isPresent() && !currentOccupancy.get().getId().equals(chargingRecord.getId())) {
+            throw new BusinessException(ResultCode.FORBIDDEN);
+        }
+
+        if (chargingRecord.getLeaveTime() == null) {
+            chargingRecord.setLeaveTime(LocalDateTime.now());
+            chargingRecord = chargingRecordRepository.save(chargingRecord);
+        }
+
+        if (chargingPile.getStatus() == ChargingPileStatus.WAITING_LEAVE
+                || chargingPile.getStatus() == ChargingPileStatus.OVERTIME) {
+            chargingPile.setStatus(ChargingPileStatus.IDLE);
+            chargingPileRepository.save(chargingPile);
+        }
+
+        log.info("Owner confirmed leaving: userId={}, recordId={}, pileId={}",
+                userId, recordId, chargingPile.getId());
+        return convertToResponse(chargingRecord, chargingPile, null);
+    }
+
+    @Override
+    @Transactional
+    public void autoCompleteDueChargingRecords() {
+        LocalDateTime now = LocalDateTime.now();
+        List<ChargingRecord> dueRecords = chargingRecordRepository
+                .findByStatusAndTargetEndTimeLessThanEqual(ChargingRecordStatus.CHARGING, now);
+
+        for (ChargingRecord record : dueRecords) {
+            try {
+                ChargingPile chargingPile = chargingPileRepository.findById(record.getChargingPileId())
+                        .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
+                completeCharging(record, chargingPile, ChargingEndReason.AUTO_TARGET_REACHED);
+            } catch (Exception e) {
+                log.error("Auto complete charging failed: recordId={}", record.getId(), e);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void sendPreEndChargingReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderEnd = now.plusMinutes(PRE_END_NOTICE_MINUTES);
+        List<ChargingRecord> records = chargingRecordRepository
+                .findByStatusAndPreEndNoticeSentAndTargetEndTimeBetween(
+                        ChargingRecordStatus.CHARGING, 0, now, reminderEnd);
+
+        for (ChargingRecord record : records) {
+            try {
+                ChargingPile pile = chargingPileRepository.findById(record.getChargingPileId())
+                        .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_PILE_NOT_FOUND));
+                warningNoticeService.createChargingEndingSoonNotice(
+                        record.getUserId(),
+                        record.getChargingPileId(),
+                        record.getId(),
+                        pile.getCode(),
+                        record.getTargetEndTime()
+                );
+                record.setPreEndNoticeSent(1);
+                chargingRecordRepository.save(record);
+            } catch (Exception e) {
+                log.error("Create pre-end charging reminder failed: recordId={}", record.getId(), e);
+            }
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ChargingRecordResponse> getChargingRecordList(Long userId, ChargingRecordStatus status,
-                                                                LocalDate startDate, LocalDate endDate,
-                                                                Integer page, Integer size) {
+                                                              LocalDate startDate, LocalDate endDate,
+                                                              Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "startTime"));
 
         Page<ChargingRecord> recordPage;
@@ -224,34 +272,12 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
         }
 
         ChargingPile pile = chargingPileRepository.findById(chargingRecord.getChargingPileId()).orElse(null);
-        Vehicle vehicle = chargingRecord.getVehicleId() != null ?
-                vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null) : null;
+        Vehicle vehicle = chargingRecord.getVehicleId() != null
+                ? vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null)
+                : null;
 
         ChargingRecordResponse response = convertToResponse(chargingRecord, pile, vehicle);
-
-        if (chargingRecord.getStatus() == ChargingRecordStatus.COMPLETED && pile != null) {
-            try {
-                var priceConfig = priceConfigService.getCurrentPriceConfig(pile.getType().name());
-                response.setPricePerKwh(priceConfig.getPricePerKwh());
-                response.setServiceFee(priceConfig.getServiceFee());
-
-                BigDecimal electricityFee = chargingRecord.getElectricQuantity()
-                        .multiply(priceConfig.getPricePerKwh())
-                        .setScale(2, RoundingMode.HALF_UP);
-                BigDecimal serviceFeeTotal = chargingRecord.getElectricQuantity()
-                        .multiply(priceConfig.getServiceFee())
-                        .setScale(2, RoundingMode.HALF_UP);
-
-                ChargingRecordResponse.FeeBreakdown breakdown = ChargingRecordResponse.FeeBreakdown.builder()
-                        .electricityFee(electricityFee)
-                        .serviceFee(serviceFeeTotal)
-                        .build();
-                response.setFeeBreakdown(breakdown);
-            } catch (Exception e) {
-                log.warn("鑾峰彇璐圭敤閰嶇疆澶辫触: {}", e.getMessage());
-            }
-        }
-
+        enrichFeeBreakdown(chargingRecord, pile, response);
         return response;
     }
 
@@ -262,34 +288,12 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .orElseThrow(() -> new BusinessException(ResultCode.CHARGING_RECORD_NOT_FOUND));
 
         ChargingPile pile = chargingPileRepository.findById(chargingRecord.getChargingPileId()).orElse(null);
-        Vehicle vehicle = chargingRecord.getVehicleId() != null ?
-                vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null) : null;
+        Vehicle vehicle = chargingRecord.getVehicleId() != null
+                ? vehicleRepository.findById(chargingRecord.getVehicleId()).orElse(null)
+                : null;
 
         ChargingRecordResponse response = convertToResponse(chargingRecord, pile, vehicle);
-
-        if (chargingRecord.getStatus() == ChargingRecordStatus.COMPLETED && pile != null) {
-            try {
-                var priceConfig = priceConfigService.getCurrentPriceConfig(pile.getType().name());
-                response.setPricePerKwh(priceConfig.getPricePerKwh());
-                response.setServiceFee(priceConfig.getServiceFee());
-
-                BigDecimal electricityFee = chargingRecord.getElectricQuantity()
-                        .multiply(priceConfig.getPricePerKwh())
-                        .setScale(2, RoundingMode.HALF_UP);
-                BigDecimal serviceFeeTotal = chargingRecord.getElectricQuantity()
-                        .multiply(priceConfig.getServiceFee())
-                        .setScale(2, RoundingMode.HALF_UP);
-
-                ChargingRecordResponse.FeeBreakdown breakdown = ChargingRecordResponse.FeeBreakdown.builder()
-                        .electricityFee(electricityFee)
-                        .serviceFee(serviceFeeTotal)
-                        .build();
-                response.setFeeBreakdown(breakdown);
-            } catch (Exception e) {
-                log.warn("Failed to calculate admin charging record fee breakdown: {}", e.getMessage());
-            }
-        }
-
+        enrichFeeBreakdown(chargingRecord, pile, response);
         return response;
     }
 
@@ -304,18 +308,17 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
         ChargingRecord record = recordOpt.get();
         ChargingPile pile = chargingPileRepository.findById(record.getChargingPileId()).orElse(null);
-        Vehicle vehicle = record.getVehicleId() != null ?
-                vehicleRepository.findById(record.getVehicleId()).orElse(null) : null;
+        Vehicle vehicle = record.getVehicleId() != null
+                ? vehicleRepository.findById(record.getVehicleId()).orElse(null)
+                : null;
 
         return convertToResponse(record, pile, vehicle);
     }
 
     @Override
     public ChargingStatisticsMonthlyResponse getMonthlyStatistics(Long userId, Integer year, Integer month) {
-        // 鏌ヨ鎸囧畾骞存湀鐨勫凡瀹屾垚鍏呯數璁板綍
-        List<ChargingRecord> records = chargingRecordRepository.findCompletedRecordsByMonth(userId, year, month);
+        List<ChargingRecord> records = chargingRecordRepository.findSettledRecordsByMonth(userId, year, month);
 
-        // 缁熻鎬绘暟鎹?
         int totalCount = records.size();
         BigDecimal totalElectricQuantity = records.stream()
                 .map(ChargingRecord::getElectricQuantity)
@@ -326,7 +329,6 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 鎸夋棩鏈熷垎缁勭粺璁?
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Map<String, List<ChargingRecord>> groupedByDate = records.stream()
                 .collect(Collectors.groupingBy(r -> r.getStartTime().format(dateFormatter)));
@@ -368,10 +370,8 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
 
     @Override
     public ChargingStatisticsYearlyResponse getYearlyStatistics(Long userId, Integer year) {
-        // 鏌ヨ鎸囧畾骞翠唤鐨勫凡瀹屾垚鍏呯數璁板綍
-        List<ChargingRecord> records = chargingRecordRepository.findCompletedRecordsByYear(userId, year);
+        List<ChargingRecord> records = chargingRecordRepository.findSettledRecordsByYear(userId, year);
 
-        // 缁熻鎬绘暟鎹?
         int totalCount = records.size();
         BigDecimal totalElectricQuantity = records.stream()
                 .map(ChargingRecord::getElectricQuantity)
@@ -382,7 +382,6 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 鎸夋湀浠藉垎缁勭粺璁?
         Map<Integer, List<ChargingRecord>> groupedByMonth = records.stream()
                 .collect(Collectors.groupingBy(r -> r.getStartTime().getMonthValue()));
 
@@ -423,9 +422,9 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
     @Override
     @Transactional(readOnly = true)
     public Page<ChargingRecordResponse> getAllChargingRecords(Long userId, Long chargingPileId,
-                                                                ChargingRecordStatus status,
-                                                                LocalDate startDate, LocalDate endDate,
-                                                                Integer page, Integer size) {
+                                                              ChargingRecordStatus status,
+                                                              LocalDate startDate, LocalDate endDate,
+                                                              Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "startTime"));
 
         LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
@@ -446,6 +445,76 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .collect(Collectors.toList());
 
         return new org.springframework.data.domain.PageImpl<>(responses, pageable, recordPage.getTotalElements());
+    }
+
+    private ChargingRecord completeCharging(ChargingRecord chargingRecord, ChargingPile chargingPile,
+                                            ChargingEndReason endReason) {
+        if (chargingRecord.getStatus() != ChargingRecordStatus.CHARGING) {
+            throw new BusinessException(ResultCode.CHARGING_RECORD_NOT_CHARGING);
+        }
+
+        LocalDateTime endTime = LocalDateTime.now();
+        Duration duration = Duration.between(chargingRecord.getStartTime(), endTime);
+        int durationMinutes = Math.max(0, (int) duration.toMinutes());
+        BigDecimal durationHours = BigDecimal.valueOf(duration.getSeconds())
+                .divide(BigDecimal.valueOf(3600), 6, RoundingMode.DOWN);
+
+        BigDecimal electricQuantity = chargingPile.getPower()
+                .multiply(durationHours)
+                .setScale(3, RoundingMode.DOWN);
+        BigDecimal fee = priceConfigService.calculateFee(chargingPile.getType().name(), electricQuantity);
+
+        chargingRecord.setEndTime(endTime);
+        chargingRecord.setDuration(durationMinutes);
+        chargingRecord.setElectricQuantity(electricQuantity);
+        chargingRecord.setFee(fee);
+        chargingRecord.setStatus(ChargingRecordStatus.COMPLETED);
+        chargingRecord.setEndReason(endReason);
+        chargingRecord = chargingRecordRepository.save(chargingRecord);
+
+        chargingPile.setStatus(ChargingPileStatus.WAITING_LEAVE);
+        chargingPileRepository.save(chargingPile);
+
+        warningNoticeService.createChargingCompletedNotice(
+                chargingRecord.getUserId(),
+                chargingRecord.getChargingPileId(),
+                chargingRecord.getId(),
+                chargingPile.getCode()
+        );
+
+        log.info("Charging completed: userId={}, recordId={}, reason={}, duration={}min, quantity={}, fee={}",
+                chargingRecord.getUserId(), chargingRecord.getId(), endReason,
+                durationMinutes, electricQuantity, fee);
+        return chargingRecord;
+    }
+
+    private void enrichFeeBreakdown(ChargingRecord chargingRecord, ChargingPile pile, ChargingRecordResponse response) {
+        if (chargingRecord.getStatus() != ChargingRecordStatus.COMPLETED
+                || pile == null
+                || chargingRecord.getElectricQuantity() == null) {
+            return;
+        }
+
+        try {
+            var priceConfig = priceConfigService.getCurrentPriceConfig(pile.getType().name());
+            response.setPricePerKwh(priceConfig.getPricePerKwh());
+            response.setServiceFee(priceConfig.getServiceFee());
+
+            BigDecimal electricityFee = chargingRecord.getElectricQuantity()
+                    .multiply(priceConfig.getPricePerKwh())
+                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal serviceFeeTotal = chargingRecord.getElectricQuantity()
+                    .multiply(priceConfig.getServiceFee())
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            ChargingRecordResponse.FeeBreakdown breakdown = ChargingRecordResponse.FeeBreakdown.builder()
+                    .electricityFee(electricityFee)
+                    .serviceFee(serviceFeeTotal)
+                    .build();
+            response.setFeeBreakdown(breakdown);
+        } catch (Exception e) {
+            log.warn("Failed to calculate charging record fee breakdown: {}", e.getMessage());
+        }
     }
 
     private Map<Long, ChargingPile> batchFetchPiles(List<ChargingRecord> records) {
@@ -484,14 +553,13 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .collect(Collectors.toMap(Vehicle::getId, vehicle -> vehicle));
     }
 
-    /**
-     * 杞崲涓哄搷搴擠TO
-     */
     private ChargingRecordResponse convertToResponse(ChargingRecord record, ChargingPile pile, Vehicle vehicle) {
         return ChargingRecordResponse.builder()
                 .id(record.getId())
                 .userId(record.getUserId())
                 .chargingPileId(record.getChargingPileId())
+                .chargingPileCode(pile != null ? pile.getCode() : null)
+                .chargingPileLocation(pile != null ? pile.getLocation() : null)
                 .pileName(pile != null ? pile.getCode() : null)
                 .pileLocation(pile != null ? pile.getLocation() : null)
                 .pileType(pile != null ? pile.getType().name() : null)
@@ -499,6 +567,13 @@ public class ChargingRecordServiceImpl implements ChargingRecordService {
                 .vehicleLicensePlate(vehicle != null ? vehicle.getLicensePlate() : null)
                 .startTime(record.getStartTime())
                 .endTime(record.getEndTime())
+                .leaveTime(record.getLeaveTime())
+                .targetType(record.getTargetType())
+                .targetValue(record.getTargetValue())
+                .targetDurationMinutes(record.getTargetDurationMinutes())
+                .targetKwh(record.getTargetKwh())
+                .targetEndTime(record.getTargetEndTime())
+                .endReason(record.getEndReason())
                 .duration(record.getDuration())
                 .electricQuantity(record.getElectricQuantity())
                 .fee(record.getFee())

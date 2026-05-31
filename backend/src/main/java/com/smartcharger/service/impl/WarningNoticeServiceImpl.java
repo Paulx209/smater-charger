@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +58,16 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
 
         Page<WarningNotice> noticePage;
         if (type != null && isRead != null) {
-            noticePage = warningNoticeRepository.findByUserIdAndTypeAndIsRead(userId, type, isRead, pageable);
+            noticePage = warningNoticeRepository.findByUserIdAndTypeAndIsReadAndSendStatus(
+                    userId, type, isRead, SendStatus.SENT, pageable);
         } else if (type != null) {
-            noticePage = warningNoticeRepository.findByUserIdAndType(userId, type, pageable);
+            noticePage = warningNoticeRepository.findByUserIdAndTypeAndSendStatus(
+                    userId, type, SendStatus.SENT, pageable);
         } else if (isRead != null) {
-            noticePage = warningNoticeRepository.findByUserIdAndIsRead(userId, isRead, pageable);
+            noticePage = warningNoticeRepository.findByUserIdAndIsReadAndSendStatus(
+                    userId, isRead, SendStatus.SENT, pageable);
         } else {
-            noticePage = warningNoticeRepository.findByUserId(userId, pageable);
+            noticePage = warningNoticeRepository.findByUserIdAndSendStatus(userId, SendStatus.SENT, pageable);
         }
 
         Map<Long, ChargingPile> pileMap = batchFetchPiles(noticePage.getContent());
@@ -78,7 +82,7 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
 
     @Override
     public UnreadCountResponse getUnreadCount(Long userId) {
-        Integer count = warningNoticeRepository.countByUserIdAndIsRead(userId, 0);
+        Integer count = warningNoticeRepository.countByUserIdAndIsReadAndSendStatus(userId, 0, SendStatus.SENT);
         return UnreadCountResponse.builder()
                 .unreadCount(count)
                 .build();
@@ -87,7 +91,7 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
     @Override
     @Transactional
     public void markAsRead(Long userId, Long noticeId) {
-        WarningNotice notice = warningNoticeRepository.findByIdAndUserId(noticeId, userId)
+        WarningNotice notice = warningNoticeRepository.findByIdAndUserIdAndSendStatus(noticeId, userId, SendStatus.SENT)
                 .orElseThrow(() -> new BusinessException(ResultCode.WARNING_NOTICE_NOT_FOUND));
 
         notice.setIsRead(1);
@@ -98,7 +102,7 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
     @Override
     @Transactional
     public void markAllAsRead(Long userId) {
-        warningNoticeRepository.markAllAsRead(userId);
+        warningNoticeRepository.markAllAsRead(userId, SendStatus.SENT);
         log.info("Mark all warning notices as read: userId={}", userId);
     }
 
@@ -156,30 +160,36 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
     @Transactional
     public void createOvertimeWarning(Long userId, Long chargingPileId, Long chargingRecordId,
                                       String pileName, Integer duration) {
-        Optional<WarningNotice> existingNotice = warningNoticeRepository.findByChargingRecordIdAndType(
-                chargingRecordId, WarningNoticeType.OVERTIME_WARNING);
-
-        if (existingNotice.isPresent()) {
-            log.debug("Overtime warning already exists: recordId={}", chargingRecordId);
-            return;
-        }
-
-        String content = String.format("您的充电桩 %s 已超时占位 %d 分钟，请尽快结束充电并驶离车位。",
+        String content = String.format("您的充电桩 %s 已超时占位 %d 分钟，请尽快驶离车位。",
                 pileName, duration);
+        createNotice(userId, chargingPileId, chargingRecordId, WarningNoticeType.OVERTIME_WARNING,
+                content, duration);
+        log.info("Create overtime warning: userId={}, recordId={}, duration={}min",
+                userId, chargingRecordId, duration);
+    }
 
-        WarningNotice notice = new WarningNotice();
-        notice.setUserId(userId);
-        notice.setChargingPileId(chargingPileId);
-        notice.setChargingRecordId(chargingRecordId);
-        notice.setType(WarningNoticeType.OVERTIME_WARNING);
-        notice.setContent(content);
-        notice.setOvertimeMinutes(duration);
-        notice.setIsRead(0);
-        notice.setSendStatus(SendStatus.PENDING);
-        notice.setCreatedTime(LocalDateTime.now());
+    @Override
+    @Transactional
+    public void createChargingEndingSoonNotice(Long userId, Long chargingPileId, Long chargingRecordId,
+                                               String pileName, LocalDateTime targetEndTime) {
+        String formattedTime = targetEndTime != null
+                ? targetEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                : "预计时间";
+        String content = String.format("您的充电桩 %s 将于 %s 结束充电，请提前准备驶离。",
+                pileName, formattedTime);
+        createNotice(userId, chargingPileId, chargingRecordId, WarningNoticeType.CHARGING_ENDING_SOON,
+                content, null);
+        log.info("Create charging ending soon notice: userId={}, recordId={}", userId, chargingRecordId);
+    }
 
-        warningNoticeRepository.save(notice);
-        log.info("Create overtime warning: userId={}, recordId={}, duration={}min", userId, chargingRecordId, duration);
+    @Override
+    @Transactional
+    public void createChargingCompletedNotice(Long userId, Long chargingPileId, Long chargingRecordId,
+                                              String pileName) {
+        String content = String.format("您的充电桩 %s 已完成充电，请尽快驶离车位。", pileName);
+        createNotice(userId, chargingPileId, chargingRecordId, WarningNoticeType.CHARGING_COMPLETED,
+                content, null);
+        log.info("Create charging completed notice: userId={}, recordId={}", userId, chargingRecordId);
     }
 
     @Override
@@ -225,7 +235,7 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        warningNoticeRepository.markAllAsReadByIds(ids);
+        warningNoticeRepository.markAllAsReadByIds(ids, SendStatus.SENT);
         log.info("Admin batch mark warning notices as read: ids={}", ids);
     }
 
@@ -246,7 +256,8 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
     @Override
     @Transactional
     public ThresholdConfigResponse setAdminThresholdConfig(ThresholdConfigRequest request) {
-        Optional<SystemConfig> configOpt = systemConfigRepository.findByUserIdIsNullAndConfigKey(CONFIG_KEY_OVERTIME_THRESHOLD);
+        Optional<SystemConfig> configOpt =
+                systemConfigRepository.findByUserIdIsNullAndConfigKey(CONFIG_KEY_OVERTIME_THRESHOLD);
 
         SystemConfig config;
         if (configOpt.isPresent()) {
@@ -281,6 +292,21 @@ public class WarningNoticeServiceImpl implements WarningNoticeService {
         return ThresholdConfigResponse.builder()
                 .threshold(DEFAULT_THRESHOLD)
                 .build();
+    }
+
+    private void createNotice(Long userId, Long chargingPileId, Long chargingRecordId,
+                              WarningNoticeType type, String content, Integer overtimeMinutes) {
+        WarningNotice notice = new WarningNotice();
+        notice.setUserId(userId);
+        notice.setChargingPileId(chargingPileId);
+        notice.setChargingRecordId(chargingRecordId);
+        notice.setType(type);
+        notice.setContent(content);
+        notice.setOvertimeMinutes(overtimeMinutes);
+        notice.setIsRead(0);
+        notice.setSendStatus(SendStatus.SENT);
+        notice.setCreatedTime(LocalDateTime.now());
+        warningNoticeRepository.save(notice);
     }
 
     private Map<Long, ChargingPile> batchFetchPiles(List<WarningNotice> notices) {

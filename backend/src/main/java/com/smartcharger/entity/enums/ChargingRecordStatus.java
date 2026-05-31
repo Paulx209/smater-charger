@@ -1,13 +1,12 @@
 package com.smartcharger.entity.enums;
 
 /**
- * 充电记录状态枚举
+ * Charging record lifecycle status.
  */
 public enum ChargingRecordStatus {
     CHARGING("充电中"),
     COMPLETED("已完成"),
-    CANCELLED("已取消"),
-    OVERTIME("超时占位");
+    CANCELLED("已取消");
 
     private final String description;
 

@@ -8,6 +8,7 @@ import com.smartcharger.entity.enums.WarningNoticeType;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface WarningNoticeService {
@@ -29,6 +30,12 @@ public interface WarningNoticeService {
 
     void createOvertimeWarning(Long userId, Long chargingPileId, Long chargingRecordId,
                                String pileName, Integer duration);
+
+    void createChargingEndingSoonNotice(Long userId, Long chargingPileId, Long chargingRecordId,
+                                        String pileName, LocalDateTime targetEndTime);
+
+    void createChargingCompletedNotice(Long userId, Long chargingPileId, Long chargingRecordId,
+                                       String pileName);
 
     Page<WarningNoticeResponse> getAdminWarningNoticeList(WarningNoticeType type, Integer isRead,
                                                           Long userId, LocalDate startDate, LocalDate endDate,

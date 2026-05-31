@@ -1,7 +1,8 @@
 package com.smartcharger.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.smartcharger.entity.enums.ChargingRecordStatus;
+import com.smartcharger.entity.enums.ChargingEndReason;
+import com.smartcharger.entity.enums.ChargingTargetType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -80,6 +81,22 @@ public class ChargingRecordResponse {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime endTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime leaveTime;
+
+    private ChargingTargetType targetType;
+
+    private BigDecimal targetValue;
+
+    private Integer targetDurationMinutes;
+
+    private BigDecimal targetKwh;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime targetEndTime;
+
+    private ChargingEndReason endReason;
 
     /**
      * 充电时长（分钟）

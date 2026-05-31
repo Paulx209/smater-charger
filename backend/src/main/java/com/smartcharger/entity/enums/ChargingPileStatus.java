@@ -1,13 +1,13 @@
 package com.smartcharger.entity.enums;
 
 /**
- * 充电桩状态枚举
+ * Charging pile runtime status.
  */
 public enum ChargingPileStatus {
     IDLE("空闲"),
     CHARGING("充电中"),
+    WAITING_LEAVE("待驶离"),
     FAULT("故障"),
-    RESERVED("已预约"),
     OVERTIME("超时占位");
 
     private final String description;
