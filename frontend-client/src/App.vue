@@ -142,8 +142,8 @@ onUnmounted(() => {
         <span class="support-card__icon">
           <el-icon><Headset /></el-icon>
         </span>
-        <div class="support-card__content">
-          <span class="support-card__label">客服热线</span>
+        <div>
+          <span>客服热线</span>
           <strong>400-888-8888</strong>
           <small>服务时间 08:00-22:00</small>
         </div>
@@ -329,28 +329,22 @@ onUnmounted(() => {
 }
 
 .sidebar-promo {
-  position: relative;
   overflow: hidden;
   padding: clamp(14px, 1.8vh, 18px);
   color: var(--owner-orange-dark);
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.9) 52%),
-    url('/images/pic3.png');
-  background-position: center, center;
-  background-size: cover, cover;
 }
 
 .sidebar-promo__image {
   height: clamp(58px, 8vh, 86px);
   margin: 4px 0 clamp(8px, 1.2vh, 12px);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 20% 40%, rgba(255, 150, 56, 0.24), transparent 28%),
+    linear-gradient(135deg, rgba(255, 247, 237, 0.9), rgba(255, 224, 190, 0.85));
 }
 
 .sidebar-promo strong,
 .sidebar-promo span {
-  position: relative;
-  z-index: 1;
   display: block;
 }
 
@@ -367,35 +361,29 @@ onUnmounted(() => {
 
 .support-card {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  gap: 12px;
   margin-top: 12px;
   padding: clamp(14px, 1.8vh, 18px);
 }
 
 .support-card__icon {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--owner-orange-dark);
   background: #fff1e5;
-  font-size: 17px;
 }
 
-.support-card__content {
-  min-width: 0;
-}
-
-.support-card__label,
+.support-card span,
 .support-card strong,
 .support-card small {
   display: block;
 }
 
-.support-card__label {
+.support-card span {
   color: var(--owner-muted);
   font-size: 13px;
 }
@@ -562,20 +550,19 @@ onUnmounted(() => {
   }
 
   .sidebar-promo span,
-  .support-card__label {
+  .support-card span {
     font-size: 12px;
   }
 
   .support-card {
-    gap: 12px;
+    gap: 10px;
     margin-top: 8px;
     padding: 12px;
   }
 
   .support-card__icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
+    width: 30px;
+    height: 30px;
   }
 
   .support-card strong {

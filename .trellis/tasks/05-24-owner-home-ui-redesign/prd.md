@@ -18,9 +18,8 @@ Redesign the owner-facing home page to match the provided reference image: a war
   referenced in CSS as `/images/pic1.png`.
 * Carbon-reduction background asset path is confirmed as `frontend-client/public/images/pic2.png`,
   referenced in CSS as `/images/pic2.png`.
-* Sidebar promotional background asset path is confirmed as `frontend-client/public/images/pic3.png`,
-  referenced in CSS as `/images/pic3.png`.
 * User wants image-backed cards for the vehicle display area, carbon-reduction area, and the sidebar promo area above the customer hotline.
+* Sidebar promo asset is not available yet; reserve an image slot for later replacement.
 * Current owner home page is `frontend-client/src/views/HomeView.vue`.
 * Current authenticated app shell/top navigation is `frontend-client/src/App.vue`.
 * Current home page composes `AnnouncementCarousel` and `CurrentChargingStatus`, then renders quick action cards and feature cards.
@@ -50,8 +49,7 @@ Redesign the owner-facing home page to match the provided reference image: a war
 * The vehicle display card should reference `/images/pic1.png`.
 * The carbon-reduction card must use the user-provided `/images/pic2.png` background image.
 * The left sidebar must include both a promotional image card and a customer hotline card below it.
-* The promotional card above the hotline must render with a visible background image and keep its
-  text readable.
+* The promotional card above the hotline must reserve a background image slot; initial implementation may use a placeholder visual until the user provides an asset.
 * Use existing real data where it already exists without backend changes:
   * current account display from `useUserStore`
   * unread notification count from `useWarningNoticeStore`
@@ -76,7 +74,7 @@ Redesign the owner-facing home page to match the provided reference image: a war
 * [x] Current vehicle card uses static range/battery visual values when showing a bound vehicle.
 * [x] Vehicle card renders with the vehicle-card background image.
 * [x] Carbon-reduction area renders with the user-provided background image.
-* [x] Sidebar promo area renders with a visible background image.
+* [x] Sidebar promo area includes a replaceable image slot/placeholder.
 * [x] Sidebar includes the customer hotline card below the promotional image card.
 * [x] Current charging status behavior is preserved or an approved replacement is implemented.
 * [x] Monthly charging statistics displays real current-month total count, total electric quantity, and total fee from the existing monthly statistics endpoint.
@@ -150,7 +148,6 @@ The redesign will update the authenticated owner shell globally rather than only
   * `frontend-client/vite.config.ts`
   * `frontend-client/public/images/pic1.png`
   * `frontend-client/public/images/pic2.png`
-  * `frontend-client/public/images/pic3.png`
 * Verification run:
   * `npm run type-check`
   * `npx eslint src/App.vue src/views/HomeView.vue vite.config.ts --no-fix --cache=false`
@@ -170,7 +167,6 @@ The redesign will update the authenticated owner shell globally rather than only
     rendered a floating control on `localhost:5173` and polluted the target UI screenshot.
 * Vehicle-card background asset exists at `frontend-client/public/images/pic1.png`.
 * Carbon-reduction background asset exists at `frontend-client/public/images/pic2.png`.
-* Sidebar promotional background asset exists at `frontend-client/public/images/pic3.png`.
 * Browser screenshot verification:
   * URL: `http://127.0.0.1:5173/`
   * Viewport: `1536x1024`
